@@ -643,7 +643,7 @@ function renderDeckListUI() {
     <div class="deck-card">
       <div class="deck-card-info">
         <div class="deck-card-title">${esc(d.name)}</div>
-        <div class="deck-card-meta">${d.filename ? (d.count ?? d.cards.length) : d.cards.length} 問${d.filename ? ' <span style="font-size:10px;color:var(--sub)">✓ 公開済み</span>' : ''}${(()=>{const u=getUnsureSet(d.id);const n=d.cards.filter(c=>u.has(c.id)).length;return n>0?`<span class="unsure-badge">🔖 ${n}</span>`:'';})()} </div>
+        <div class="deck-card-meta">${d.filename ? (d.count ?? d.cards.length) : d.cards.length} 問${d.filename ? ' <span style="font-size:10px;color:var(--sub)">🔵 公開済み</span>' : ''}${(()=>{const u=getUnsureSet(d.id);const n=d.cards.filter(c=>u.has(c.id)).length;return n>0?`<span class="unsure-badge">🔖 ${n}</span>`:'';})()} </div>
       </div>
       <div class="deck-card-actions">
         <button class="btn btn-blue btn-sm" onclick="openPlayMode('${d.id}')"
