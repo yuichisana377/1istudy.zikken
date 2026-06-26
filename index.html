@@ -148,7 +148,7 @@ body {
   font-size: 16px; font-weight: 700; margin-bottom: .25rem;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.deck-card-meta { font-size: 13px; color: var(--sub); }
+.deck-card-meta { font-size: 13px; color: var(--sub); display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
 .deck-card-actions { display: flex; gap: .5rem; flex-shrink: 0; align-items: center; }
 .icon-btn {
   width: 40px; height: 40px; border-radius: 50%;
@@ -157,6 +157,19 @@ body {
   font-size: 18px; cursor: pointer; flex-shrink: 0;
 }
 .icon-btn:active { background: var(--border); }
+
+/* ── 公開バッジ ── */
+.pub-badge {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 11px; font-weight: 700; padding: 2px 8px;
+  border-radius: 20px; white-space: nowrap;
+}
+.pub-badge.published {
+  background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe;
+}
+.pub-badge.local {
+  background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1;
+}
 
 .add-deck-btn {
   width: 52px; height: 52px; border-radius: 50%;
@@ -329,7 +342,7 @@ body {
   .study-answer-panel, .modal-sheet { animation: none; }
 }
 
-/* わからないボタン */
+/* ── わからないボタン（灰色=わかってる / 黄色=わからない） ── */
 .unsure-btn {
   display: inline-flex; align-items: center; gap: .4rem;
   padding: .4rem .9rem; border-radius: 20px; font-size: 13px; font-weight: 600;
@@ -337,13 +350,17 @@ body {
   background: var(--surface); color: var(--sub);
   transition: all .15s; flex-shrink: 0;
 }
+/* わからない状態（marked = 黄色） */
 .unsure-btn.marked {
-  background: #fff7ed; color: #c2410c; border-color: #fed7aa;
+  background: #fffbeb; color: #b45309; border-color: #fcd34d;
 }
+/* わかってる状態（unmarked = 灰色）はデフォルトのまま */
+
+/* わからないバッジ（デッキ一覧） */
 .unsure-badge {
-  display: inline-block; font-size: 10px; background: #fff7ed; color: #c2410c;
-  border: 1px solid #fed7aa; padding: 1px 7px; border-radius: 20px; font-weight: 700;
-  margin-left: 4px;
+  display: inline-flex; align-items: center;
+  font-size: 10px; background: #fffbeb; color: #b45309;
+  border: 1px solid #fcd34d; padding: 1px 7px; border-radius: 20px; font-weight: 700;
 }
 
 /* プレイモード選択モーダル */
@@ -572,6 +589,10 @@ body {
     <div class="menu-item" onclick="menuRename()">
       <span class="menu-icon">📝</span>デッキ名を変更する
     </div>
+    <!-- 公開済みのときだけ表示 -->
+    <div class="menu-item" id="menu-unpublish-item" onclick="menuUnpublish()" style="display:none">
+      <span class="menu-icon">🔴</span>非公開に戻す
+    </div>
     <div class="menu-item danger" onclick="menuDelete()">
       <span class="menu-icon">🗑</span>デッキを削除する
     </div>
@@ -602,10 +623,10 @@ body {
 
 <script>
 // ═══════════════════════════════════════════
-//  設定（予定管理アプリと同じ値を入れる）
+//  設定
 // ═══════════════════════════════════════════
-const API_BASE = "https://python-bot-1istudy.onrender.com/";  // ← bot の URL（予定管理と同じ）
-const GUILD_ID = "1509880344806162544";                        // ← Discord サーバーID（予定管理と同じ）
+const API_BASE = "https://python-bot-1istudy.onrender.com/";
+const GUILD_ID = "1509880344806162544";
 
 const STORE_KEY = 'cardmaker_decks_v1';
 function loadDecks() { try { return JSON.parse(localStorage.getItem(STORE_KEY)) || []; } catch { return []; } }
@@ -625,10 +646,8 @@ function showScreen(id) {
   document.getElementById('screen-' + id).classList.add('active');
   window.scrollTo(0, 0);
   if (id === 'list') {
-    // ローカルを即座に表示
     decks = loadDecks();
     renderDeckListUI();
-    // botへのアクセスは遅延してバックグラウンドで実行
     setTimeout(() => renderDeckList(), 0);
   }
 }
@@ -639,26 +658,38 @@ function renderDeckListUI() {
   const empty = document.getElementById('deck-list-empty');
   if (!decks.length) { grid.style.display='none'; empty.style.display='block'; return; }
   empty.style.display='none'; grid.style.display='flex';
-  grid.innerHTML = decks.map(d => `
+  grid.innerHTML = decks.map(d => {
+    const unsureSet = getUnsureSet(d.id);
+    const unsureCount = d.cards.filter((c, i) => unsureSet.has(c.id || ('idx_' + i))).length;
+    const unsureBadge = unsureCount > 0
+      ? `<span class="unsure-badge">🔖 ${unsureCount}</span>`
+      : '';
+    // 公開バッジ
+    const pubBadge = d.filename
+      ? `<span class="pub-badge published">🔵 公開済み</span>`
+      : `<span class="pub-badge local">🔴 非公開</span>`;
+    return `
     <div class="deck-card">
       <div class="deck-card-info">
         <div class="deck-card-title">${esc(d.name)}</div>
-        <div class="deck-card-meta">${d.filename ? (d.count ?? d.cards.length) : d.cards.length} 問${d.filename ? ' <span style="font-size:10px;color:var(--sub)">✓ 公開済み</span>' : ''}${(()=>{const u=getUnsureSet(d.id);const n=d.cards.filter(c=>u.has(c.id)).length;return n>0?`<span class="unsure-badge">🔖 ${n}</span>`:'';})()} </div>
+        <div class="deck-card-meta">
+          ${d.filename ? (d.count ?? d.cards.length) : d.cards.length} 問
+          ${pubBadge}
+          ${unsureBadge}
+        </div>
       </div>
       <div class="deck-card-actions">
         <button class="btn btn-blue btn-sm" onclick="openPlayMode('${d.id}')"
           ${d.cards.length===0?'disabled':''}>▶ プレイ</button>
         <button class="icon-btn" onclick="openDeckMenu('${d.id}')" title="メニュー">✏️</button>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 async function renderDeckList() {
-  // まずローカルキャッシュで即描画
   decks = loadDecks();
   renderDeckListUI();
-
-  // bot API から最新を取得して更新（5秒でタイムアウト）
   try {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 5000);
@@ -668,26 +699,22 @@ async function renderDeckList() {
     if (!data.ok) return;
 
     const fetched = data.sets.map(s => {
-      // ローカルに同名ファイルのデッキがあればidを引き継ぐ
       const existing = decks.find(d => d.filename === s.filename);
       return {
         id:       existing ? existing.id : genId(),
         name:     s.name,
-        cards:    s.cards,   // カードの中身もサーバーから取得
+        cards:    s.cards,
         filename: s.filename,
         count:    s.count,
       };
     });
 
-    // 公開済みと同じ名前のローカルデッキは除外して重複を防ぐ
     const publishedNames = new Set(fetched.map(f => f.name));
     const localOnly = decks.filter(d => !d.filename && !publishedNames.has(d.name));
     decks = [...localOnly, ...fetched];
     saveDecks(decks);
     renderDeckListUI();
-  } catch(e) {
-    // botに繋がらなくてもローカル表示は維持
-  }
+  } catch(e) {}
 }
 
 // ── デッキメニュー（鉛筆） ─────────────
@@ -695,16 +722,60 @@ function openDeckMenu(id) {
   menuTargetId = id;
   const deck = decks.find(d => d.id === id);
   document.getElementById('menu-deck-name').textContent = deck.name;
+  // 公開済みのときだけ「非公開に戻す」を表示
+  document.getElementById('menu-unpublish-item').style.display = deck.filename ? '' : 'none';
   openModal('modal-deck-menu');
 }
 function menuEdit()   { closeModal('modal-deck-menu'); openEditDeck(menuTargetId); }
 function menuRename() { closeModal('modal-deck-menu'); openRename(menuTargetId); }
+
+// ── 非公開に戻す ──────────────────────
+async function menuUnpublish() {
+  closeModal('modal-deck-menu');
+  const deck = decks.find(d => d.id === menuTargetId);
+  if (!deck || !deck.filename) return;
+  if (!confirm(`「${deck.name}」をGitHubから削除して非公開に戻しますか？`)) return;
+
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 8000);
+    const res = await fetch(`${API_BASE}delete_cards`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ filename: deck.filename }),
+      signal:  controller.signal,
+    });
+    clearTimeout(timer);
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || '削除失敗');
+
+    // ローカルのfilenameを消してローカルのみの状態に
+    deck.filename = null;
+    deck.count    = undefined;
+    saveDecks(decks);
+    renderDeckListUI();
+
+    const banner = document.getElementById('save-ok-banner');
+    banner.textContent = '🔴 非公開に戻しました';
+    banner.style.background = '#f1f5f9';
+    banner.style.color = '#334155';
+    banner.style.display = 'block';
+    setTimeout(() => {
+      banner.style.display = 'none';
+      banner.style.background = '#dcfce7';
+      banner.style.color = '#166534';
+    }, 3000);
+
+  } catch(e) {
+    alert('GitHubからの削除に失敗しました。しばらく後に再試行してください。\n' + e.message);
+  }
+}
+
 async function menuDelete() {
   closeModal('modal-deck-menu');
   if (!confirm('このデッキを削除しますか？')) return;
   const deck = decks.find(d => d.id === menuTargetId);
 
-  // 公開済みならGitHubからも削除
   if (deck && deck.filename) {
     try {
       await fetch(`${API_BASE}delete_cards`, {
@@ -769,12 +840,10 @@ function clearEditor() {
   });
 }
 function saveCard(mode) {
-  // mode: false=次へ / 'local'=保存のみ / 'publish'=保存して公開
   const q = document.getElementById('ta-q').value.trim();
   const a = document.getElementById('ta-a').value.trim();
   const deck = decks.find(d => d.id === currentDeckId);
 
-  // 入力中のカードがあれば追加、なければスルー
   if (q || a) {
     if (!q || !a) { shake(!q ? 'ta-q' : 'ta-a'); return; }
     deck.cards.push({ id:genId(), question:q, answer:a,
@@ -785,23 +854,19 @@ function saveCard(mode) {
   }
 
   if (mode === 'publish') {
-    publishDeck(deck);          // GitHub に公開してから一覧へ
+    publishDeck(deck);
   } else if (mode === 'local') {
     saveDecks(decks);
-    showScreen('list');         // ローカル保存だけして一覧へ
+    showScreen('list');
   } else {
-    // 次へ
     clearEditor(); renderCreatedList(); document.getElementById('edit-scroll').scrollTo(0,0); document.getElementById('ta-q').focus();
   }
 }
 
-// ── bot API 経由で GitHub に保存 ────────
 async function publishDeck(deck) {
-  // ローカルに保存して即座に一覧へ（表示は一瞬）
   saveDecks(decks);
   showScreen('list');
 
-  // バックグラウンドでbotに送信
   const cards = deck.cards.map(c => ({
     question:    c.question,
     answer:      c.answer,
@@ -823,11 +888,10 @@ async function publishDeck(deck) {
     const data = await res.json();
     if (!data.ok) throw new Error(data.error || '不明なエラー');
 
-    // 公開成功 → filenameを保存してUIを更新
     deck.filename = data.filename;
     deck.count    = deck.cards.length;
     saveDecks(decks);
-    renderDeckListUI();  // botを待たずローカルで即再描画
+    renderDeckListUI();
 
     const banner = document.getElementById('save-ok-banner');
     banner.textContent = '✓ 保存して公開しました！';
@@ -850,6 +914,7 @@ async function publishDeck(deck) {
     }, 4000);
   }
 }
+
 function renderCreatedList() {
   const deck = decks.find(d => d.id === currentDeckId);
   const section = document.getElementById('created-section');
@@ -889,7 +954,6 @@ function openCardEditModal(idx) {
   document.getElementById('modal-edit-a').value = c.answer;
   document.getElementById('modal-edit-e').value = c.explanation||'';
   ['modal-edit-q','modal-edit-a','modal-edit-e'].forEach(id => autoResize(document.getElementById(id)));
-  // メッセージバーをリセット
   document.getElementById('card-edit-ok').style.display  = 'none';
   document.getElementById('card-edit-err').style.display = 'none';
   openModal('modal-card-edit');
@@ -921,14 +985,12 @@ async function openRename(id) {
   renamingDeckId = id;
   const deck = decks.find(d => d.id === id);
 
-  // セット名をセット（科目部分を除いた純粋な名前を表示）
   const currentSubject = deck.subject || '';
   const currentName = currentSubject && deck.name.startsWith(currentSubject + ' ')
     ? deck.name.slice(currentSubject.length + 1)
     : deck.name;
   document.getElementById('modal-rename-input').value = currentName;
 
-  // 科目セレクトを読み込み
   const sel = document.getElementById('modal-rename-subject');
   sel.innerHTML = '<option value="">読み込み中…</option>';
   openModal('modal-rename');
@@ -960,8 +1022,6 @@ function saveRename() {
 }
 
 // ── 学習 ─────────────────────────────
-// ── わからない管理 ───────────────────────
-// { deckId: Set(cardId) } の形でlocalStorageに保存
 function getUnsureSet(deckId) {
   try {
     const raw = localStorage.getItem('unsure_' + deckId);
@@ -981,14 +1041,13 @@ function openPlayMode(deckId) {
   document.getElementById('play-mode-all-sub').textContent = `${deck.cards.length} 問`;
 
   const unsure = getUnsureSet(deckId);
-  const unsureCount = deck.cards.filter(c => unsure.has(c.id)).length;
+  const unsureCount = deck.cards.filter((c, i) => unsure.has(c.id || ('idx_' + i))).length;
   const unsureItem = document.getElementById('play-mode-unsure-item');
 
   if (unsureCount > 0) {
     document.getElementById('play-mode-unsure-sub').textContent = `${unsureCount} 問`;
     unsureItem.style.display = '';
   } else {
-    // わからないが0件なら選択肢を出さずに直接プレイ
     startStudyMode('all');
     return;
   }
@@ -1000,7 +1059,7 @@ function startStudyMode(mode) {
   const deck = decks.find(d => d.id === studyDeckId);
   if (mode === 'unsure') {
     const unsure = getUnsureSet(studyDeckId);
-    studyCards = deck.cards.filter(c => unsure.has(c.id));
+    studyCards = deck.cards.filter((c, i) => unsure.has(c.id || ('idx_' + i)));
   } else {
     studyCards = [...deck.cards];
   }
@@ -1028,16 +1087,13 @@ function renderStudyCard() {
   }
   const c = studyCards[studyIdx];
 
-  // 問題文セット
   document.getElementById('study-q-text').textContent = c.question;
   document.getElementById('study-q-imgs').innerHTML = (c.imgs_q||[]).map(s=>`<img src="${s}" alt="">`).join('');
 
-  // 解答パネルを隠して「答えを見る」ボタンを表示
   document.getElementById('study-answer-panel').classList.remove('show');
   document.getElementById('study-reveal-bar').style.display = '';
   document.getElementById('study-nav').style.display = 'none';
 
-  // 解答・解説をセット（まだ非表示）
   document.getElementById('study-a-text').textContent = c.answer;
   document.getElementById('study-a-imgs').innerHTML = (c.imgs_a||[]).map(s=>`<img src="${s}" alt="">`).join('');
   const explWrap = document.getElementById('study-expl-wrap');
@@ -1046,48 +1102,46 @@ function renderStudyCard() {
     explWrap.style.display = '';
   } else { explWrap.style.display = 'none'; }
 
-  // 進捗
   const pct = studyCards.length > 1 ? (studyIdx/(studyCards.length-1))*100 : 100;
   document.getElementById('study-prog-fill').style.width  = pct + '%';
   document.getElementById('study-prog-label').textContent = `${studyIdx+1} / ${studyCards.length}`;
   document.getElementById('study-prev').disabled = studyIdx === 0;
   document.getElementById('study-next').textContent = studyIdx === studyCards.length-1 ? '完了 ✓' : '次へ →';
 
-  // わからないボタンの状態を反映
-  const unsure = getUnsureSet(studyDeckId);
-  const btn = document.getElementById('unsure-btn');
-  const marked = unsure.has(studyCards[studyIdx]?.id);
-  btn.textContent = marked ? '✓ わかった' : '？ わからない';
-  btn.classList.toggle('marked', marked);
+  updateUnsureBtn();
 }
 
 function revealAnswer() {
   document.getElementById('study-answer-panel').classList.add('show');
   document.getElementById('study-reveal-bar').style.display = 'none';
   document.getElementById('study-nav').style.display = '';
-  // わからないボタンの状態を反映
+  updateUnsureBtn();
+}
+
+function updateUnsureBtn() {
+  const card = studyCards[studyIdx];
+  if (!card) return;
+  // idがないカードはindexをキーにする
+  const key = card.id || ('idx_' + studyIdx);
   const unsure = getUnsureSet(studyDeckId);
+  const marked = unsure.has(key);
   const btn = document.getElementById('unsure-btn');
-  const marked = unsure.has(studyCards[studyIdx]?.id);
-  btn.textContent = marked ? '✓ わかった' : '？ わからない';
+  btn.textContent = 'わからない';
   btn.classList.toggle('marked', marked);
 }
 
 function toggleUnsure() {
   const card = studyCards[studyIdx];
   if (!card) return;
+  const key = card.id || ('idx_' + studyIdx);
   const unsure = getUnsureSet(studyDeckId);
-  if (unsure.has(card.id)) {
-    unsure.delete(card.id);
+  if (unsure.has(key)) {
+    unsure.delete(key);
   } else {
-    unsure.add(card.id);
+    unsure.add(key);
   }
   saveUnsureSet(studyDeckId, unsure);
-  // ボタン表示を即更新
-  const btn = document.getElementById('unsure-btn');
-  const marked = unsure.has(card.id);
-  btn.textContent = marked ? '✓ わかった' : '？ わからない';
-  btn.classList.toggle('marked', marked);
+  updateUnsureBtn();
 }
 
 function studyMove(dir) {
