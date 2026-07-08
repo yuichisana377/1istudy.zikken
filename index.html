@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ja">　
+<html lang="ja">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -1510,24 +1510,17 @@
     }
   }
 
-  /* ---- 永続化：全員で共有するストレージを使用 ---- */
+  /* ---- 永続化：サーバーAPI経由で全員と共有 ---- */
   async function loadData(){
-    try{
-      const result = await window.storage.get(STORAGE_KEY, true);
-      if (result && result.value){
-        return JSON.parse(result.value);
-      }
-      return { rounds: [], roster: [], customMoves: [] };
-    }catch(e){
-      return { rounds: [], roster: [], customMoves: [] };
-    }
+    const res = await fetch("/api/get");
+    return await res.json();
   }
 
   async function saveData(data){
-    const result = await window.storage.set(STORAGE_KEY, JSON.stringify(data), true);
-    if (!result){
-      throw new Error('storage.set failed');
-    }
+    await fetch("/api/set", {
+      method: "POST",
+      body: JSON.stringify(data)
+    });
   }
 
 
