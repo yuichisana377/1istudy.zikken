@@ -916,9 +916,12 @@
     roster = [];
     customMoveHistory = [];
     try{
-      await window.storage.set(STORAGE_KEY, JSON.stringify(rounds), SHARED);
-      await window.storage.set(STORAGE_KEY_ROSTER, JSON.stringify(roster), SHARED);
-      await window.storage.set(STORAGE_KEY_CUSTOM, JSON.stringify(customMoveHistory), SHARED);
+      await saveData({
+        rounds: [],
+        roster: [],
+        customMoves: []
+});
+
     }catch(e){
       console.error('リセットに失敗しました', e);
       showToast('リセットに失敗しました');
@@ -1157,7 +1160,12 @@
 
   async function persistRoster(){
     try{
-      await window.storage.set(STORAGE_KEY_ROSTER, JSON.stringify(roster), SHARED);
+      await saveData({
+        rounds,
+        roster,
+        customMoves
+      });
+
     }catch(e){
       console.error('参加者リストの保存に失敗しました', e);
       showToast('保存に失敗しました');
@@ -1281,24 +1289,42 @@
   submitBtn.addEventListener('click', submitRound);
 
   async function persistRounds(){
-    try{
-      await window.storage.set(STORAGE_KEY, JSON.stringify(rounds), SHARED);
-    }catch(e){
-      console.error('保存に失敗しました', e);
-      showToast('保存に失敗しました');
-    }
+  try{
+    await saveData({
+      rounds,
+      roster,
+      customMoves: customMoveHistory
+    });
+  }catch(e){
+    console.error('保存に失敗しました', e);
+    showToast('保存に失敗しました');
   }
+}
 
-  async function loadRounds(){
-    try{
-      const res = await window.storage.get(STORAGE_KEY, SHARED);
-      if (res && res.value){
-        rounds = JSON.parse(res.value);
-      }
-    }catch(e){
-      rounds = [];
-    }
+async function loadRounds(){
+  try{
+    const data = await loadData();
+    rounds = data.rounds || [];
+    roster = data.roster || [];
+    customMoveHistory = data.customMoves || [];
+  }catch(e){
+    rounds = [];
+    roster = [];
+    customMoveHistory = [];
   }
+}
+
+async function persistCustomMoves(){
+  try{
+    await saveData({
+      rounds,
+      roster,
+      customMoves: customMoveHistory
+    });
+  }catch(e){
+    console.error('独自手の保存に失敗しました', e);
+  }
+}
 
   function updateCustomMoveHistory(participants){
     participants.forEach(p => {
@@ -1311,13 +1337,6 @@
     customMoveHistory = customMoveHistory.slice(0, MAX_CUSTOM_MOVES);
   }
 
-  async function persistCustomMoves(){
-    try{
-      await window.storage.set(STORAGE_KEY_CUSTOM, JSON.stringify(customMoveHistory), SHARED);
-    }catch(e){
-      console.error('独自手の保存に失敗しました', e);
-    }
-  }
 
   async function loadCustomMoves(){
     try{
@@ -1469,6 +1488,19 @@
     }
   }
 
+  　async function loadData() {
+  　const res = await fetch("/api/get");
+  　return await res.json();
+　}
+　
+　async function saveData(data) {
+  　await fetch("/api/set", {
+    　method: "POST",
+    　body: JSON.stringify(data)
+  　});
+　}
+
+
   async function init(){
     await loadRounds();
     await loadCustomMoves();
@@ -1483,6 +1515,8 @@
     setMode('edit');
     pollTimer = setInterval(pollUpdates, POLL_INTERVAL_MS);
   }
+
+  
 
   init();
 })();
