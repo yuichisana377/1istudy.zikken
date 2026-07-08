@@ -62,7 +62,7 @@
     box-shadow: inset 0 1px 3px rgba(0,0,0,0.35);
   }
 
-  
+  .wrap{
     max-width:760px;
     margin:0 auto;
     padding:36px 24px 80px 60px;
@@ -339,6 +339,12 @@
     border-radius:3px;
     background:#fff;
     color:var(--ink);
+  }
+  .name-display{
+    font-size:14px;
+    max-width:100%;
+    display:block;
+    word-break:break-all;
   }
 
   .move-choices{
@@ -645,8 +651,6 @@
     display:none; /* スマホでは左の穴を非表示 */
   }
 
-  /* 既に書いてあるスマホ用のCSSの続きに追加 */
-
   .add-participant-btn{
     width: 100%;
     display: block;
@@ -875,10 +879,7 @@
 
 <script>
 (function(){
-  const STORAGE_KEY = 'jiyuritsu-janken-rounds';
-  const STORAGE_KEY_CUSTOM = 'jiyuritsu-janken-custom-moves';
-  const STORAGE_KEY_ROSTER = 'jiyuritsu-janken-roster';
-  const SHARED = true; // 全員で同じデータを見る/編集するので共有ストレージを使う
+  const STORAGE_KEY = 'janken-data';
   const POLL_INTERVAL_MS = 4000;
   const penClasses = ['a','b','c','d'];
   const STANDARD_MOVES = [
@@ -891,7 +892,7 @@
   let rounds = [];
   let customMoveHistory = []; // 参加者全員で共有する独自手の履歴
   let roster = []; // 事前登録した参加者名のリスト
-  let draftParticipants = []; // [{name, nameLocked, manualNameMode, mode: 'gu'|'choki'|'pa'|'custom'|null, customText}]
+  let draftParticipants = []; // [{name, mode: 'gu'|'choki'|'pa'|'custom'|null, customText}]
   let draftWinner = null;
   let currentMode = 'edit'; // 'edit' | 'view'
   let pollTimer = null;
@@ -957,10 +958,10 @@
     customMoveHistory = [];
     try{
       await saveData({
-  rounds,
-  roster,
-  customMoves: customMoveHistory
-});
+        rounds,
+        roster,
+        customMoves: customMoveHistory
+      });
     }catch(e){
       console.error('リセットに失敗しました', e);
       showToast('リセットに失敗しました');
@@ -1056,8 +1057,6 @@
         });
         nameSection.appendChild(manualInput);
       }
-      nameDisplay.style.wordBreak = "break-all";
-
 
       block.appendChild(nameSection);
 
@@ -1088,12 +1087,12 @@
         const history = customMoveHistory.filter(Boolean);
         const historyWrap = document.createElement('div');
         historyWrap.className = 'custom-history';
-        const label = document.createElement('span');
-        label.className = 'custom-history-label';
-        label.textContent = history.length > 0
+        const label2 = document.createElement('span');
+        label2.className = 'custom-history-label';
+        label2.textContent = history.length > 0
           ? '独自手から選ぶ：'
           : 'まだ独自手が登録されていません。上の「独自手リストを管理」で登録しよう。';
-        historyWrap.appendChild(label);
+        historyWrap.appendChild(label2);
         if (history.length > 0){
           const chipsWrap = document.createElement('div');
           chipsWrap.className = 'custom-history-chips';
@@ -1321,42 +1320,42 @@
   submitBtn.addEventListener('click', submitRound);
 
   async function persistRounds(){
-  try{
-    await saveData({
-      rounds,
-      roster,
-      customMoves: customMoveHistory
-    });
-  }catch(e){
-    console.error('保存に失敗しました', e);
-    showToast('保存に失敗しました');
+    try{
+      await saveData({
+        rounds,
+        roster,
+        customMoves: customMoveHistory
+      });
+    }catch(e){
+      console.error('保存に失敗しました', e);
+      showToast('保存に失敗しました');
+    }
   }
-}
 
-async function loadRounds(){
-  try{
-    const data = await loadData();
-    rounds = data.rounds || [];
-    roster = data.roster || [];
-    customMoveHistory = data.customMoves || [];
-  }catch(e){
-    rounds = [];
-    roster = [];
-    customMoveHistory = [];
+  async function loadRounds(){
+    try{
+      const data = await loadData();
+      rounds = data.rounds || [];
+      roster = data.roster || [];
+      customMoveHistory = data.customMoves || [];
+    }catch(e){
+      rounds = [];
+      roster = [];
+      customMoveHistory = [];
+    }
   }
-}
 
-async function persistCustomMoves(){
-  try{
-    await saveData({
-      rounds,
-      roster,
-      customMoves: customMoveHistory
-    });
-  }catch(e){
-    console.error('独自手の保存に失敗しました', e);
+  async function persistCustomMoves(){
+    try{
+      await saveData({
+        rounds,
+        roster,
+        customMoves: customMoveHistory
+      });
+    }catch(e){
+      console.error('独自手の保存に失敗しました', e);
+    }
   }
-}
 
   function updateCustomMoveHistory(participants){
     participants.forEach(p => {
@@ -1511,17 +1510,25 @@ async function persistCustomMoves(){
     }
   }
 
-  　async function loadData() {
-  　const res = await fetch("/api/get");
-  　return await res.json();
-　}
-　
-　async function saveData(data) {
-  　await fetch("/api/set", {
-    　method: "POST",
-    　body: JSON.stringify(data)
-  　});
-　}
+  /* ---- 永続化：全員で共有するストレージを使用 ---- */
+  async function loadData(){
+    try{
+      const result = await window.storage.get(STORAGE_KEY, true);
+      if (result && result.value){
+        return JSON.parse(result.value);
+      }
+      return { rounds: [], roster: [], customMoves: [] };
+    }catch(e){
+      return { rounds: [], roster: [], customMoves: [] };
+    }
+  }
+
+  async function saveData(data){
+    const result = await window.storage.set(STORAGE_KEY, JSON.stringify(data), true);
+    if (!result){
+      throw new Error('storage.set failed');
+    }
+  }
 
 
   async function init(){
@@ -1539,7 +1546,7 @@ async function persistCustomMoves(){
     pollTimer = setInterval(pollUpdates, POLL_INTERVAL_MS);
   }
 
-  
+
 
   init();
 })();
