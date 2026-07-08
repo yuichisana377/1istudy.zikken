@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
 <title>自由律じゃんけん メモ帳</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -29,6 +29,10 @@
 
   *{box-sizing:border-box;}
 
+  html{
+    touch-action: pan-x pan-y;
+  }
+
   body{
     margin:0;
     background:
@@ -40,6 +44,7 @@
     color:var(--ink);
     min-height:100vh;
     padding:0;
+    touch-action: pan-x pan-y;
   }
 
   .binder{
