@@ -917,11 +917,10 @@
     customMoveHistory = [];
     try{
       await saveData({
-        rounds: [],
-        roster: [],
-        customMoves: []
+  rounds,
+  roster,
+  customMoves: customMoveHistory
 });
-
     }catch(e){
       console.error('リセットに失敗しました', e);
       showToast('リセットに失敗しました');
@@ -1147,16 +1146,7 @@
     showToast('記録しました');
   }
 
-  async function loadRoster(){
-    try{
-      const res = await window.storage.get(STORAGE_KEY_ROSTER, SHARED);
-      if (res && res.value){
-        roster = JSON.parse(res.value);
-      }
-    }catch(e){
-      roster = [];
-    }
-  }
+  async function loadRoster(){ /* loadRounds() が兼ねる */ }
 
   async function persistRoster(){
     try{
@@ -1338,16 +1328,7 @@ async function persistCustomMoves(){
   }
 
 
-  async function loadCustomMoves(){
-    try{
-      const res = await window.storage.get(STORAGE_KEY_CUSTOM, SHARED);
-      if (res && res.value){
-        customMoveHistory = JSON.parse(res.value);
-      }
-    }catch(e){
-      customMoveHistory = [];
-    }
-  }
+  async function loadCustomMoves(){ /* loadRounds() が兼ねる */ }
 
   async function deleteRound(id){
     rounds = rounds.filter(r => r.id !== id);
