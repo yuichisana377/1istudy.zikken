@@ -1,4 +1,3 @@
-
 export class details {
   constructor(state) {
     this.state = state;
