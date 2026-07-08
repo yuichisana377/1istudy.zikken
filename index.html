@@ -71,7 +71,7 @@
     .wrap{ padding-left:76px; }
   }
 
-  header.page-head{ margin-bottom:28px; position:relative; }
+  header.page-head{ margin-bottom:20px; position:relative; }
   header.page-head h1{
     font-family:'Yomogi', cursive;
     font-size:34px;
@@ -100,6 +100,79 @@
     font-size:13.5px;
     line-height:1.7;
   }
+
+  /* ---- mode toolbar ---- */
+  .mode-toolbar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    margin-bottom:14px;
+    flex-wrap:wrap;
+  }
+  .mode-toggle{
+    display:inline-flex;
+    border:1px solid var(--rule);
+    border-radius:20px;
+    overflow:hidden;
+    background:#fbf9f2;
+  }
+  .mode-btn{
+    font-family:'Zen Kaku Gothic New', sans-serif;
+    font-size:13px;
+    font-weight:700;
+    padding:8px 16px;
+    border:none;
+    background:transparent;
+    color:var(--ink-soft);
+    cursor:pointer;
+    transition:all .12s ease;
+  }
+  .mode-btn.active{
+    background:var(--ink);
+    color:var(--paper);
+  }
+  .reset-btn{
+    font-family:'Zen Kaku Gothic New', sans-serif;
+    font-size:12.5px;
+    font-weight:700;
+    padding:8px 14px;
+    border:1.5px solid var(--hanko);
+    border-radius:20px;
+    background:#fff;
+    color:var(--hanko);
+    cursor:pointer;
+    white-space:nowrap;
+    transition:all .12s ease;
+  }
+  .reset-btn:hover{ background:var(--hanko); color:#fff; }
+  .reset-btn.confirming{ background:var(--hanko); color:#fff; animation:pulse 1s infinite; }
+  @keyframes pulse{
+    0%,100%{ opacity:1; }
+    50%{ opacity:0.65; }
+  }
+
+  .mode-note{
+    font-size:12px;
+    color:var(--ink-soft);
+    background:#e9e5d8;
+    border-radius:6px;
+    padding:8px 12px;
+    margin:0 0 18px;
+    line-height:1.6;
+  }
+  .view-mode-banner{
+    display:none;
+    font-size:12.5px;
+    color:var(--hanko-dark);
+    background:#f6e4e1;
+    border-radius:6px;
+    padding:8px 12px;
+    margin:0 0 18px;
+    line-height:1.6;
+  }
+  body.view-mode .view-mode-banner{ display:block; }
+  body.view-mode .edit-only{ display:none !important; }
 
   .roster-hint{
     margin:0 0 12px;
@@ -580,6 +653,22 @@
     font-size:26px;
   }
 
+  .mode-toolbar{
+    flex-direction:column;
+    align-items:stretch;
+  }
+  .mode-toggle{
+    width:100%;
+  }
+  .mode-btn{
+    flex:1;
+    text-align:center;
+  }
+  .reset-btn{
+    width:100%;
+    text-align:center;
+  }
+
   .card{
     padding:14px 16px;
     margin-bottom:18px;
@@ -675,7 +764,18 @@
     誰が何を出したか、判定はどうだったかをその場でメモ。</p>
   </header>
 
-  <div class="card">
+  <div class="mode-toolbar">
+    <div class="mode-toggle" id="modeToggle">
+      <button type="button" class="mode-btn active" data-mode="edit" id="modeEditBtn">✏️ 編集モード</button>
+      <button type="button" class="mode-btn" data-mode="view" id="modeViewBtn">👀 視聴モード</button>
+    </div>
+    <button type="button" class="reset-btn" id="resetBtn">🗑 全部リセット</button>
+  </div>
+
+  <p class="mode-note">このメモ帳のデータは、このページを開いている全員で共有されます。数秒おきに自動更新されるので、誰かが記録した対戦は他の人の画面にも反映されます。入力しない人は「視聴モード」にすると、結果とランキングだけを見やすく表示できます。</p>
+  <p class="view-mode-banner">👀 視聴モード中：入力欄は非表示です。対戦結果とランキングを見るだけのモードです。自動的に最新の状態に更新されます。</p>
+
+  <div class="card edit-only">
     <h2>参加者リストを管理</h2>
     <p class="roster-hint">先に名前を登録しておくと、対戦のたびに入力しなくてもタップで選べます。</p>
     <div class="roster-add-row">
@@ -685,7 +785,7 @@
     <div class="roster-chips" id="rosterChips"></div>
   </div>
 
-  <div class="card">
+  <div class="card edit-only">
     <h2>独自手リストを管理</h2>
     <p class="roster-hint">グー・チョキ・パー以外の技も先に登録しておくと、対戦のたびに考えなくても「みんなの手から選ぶ」でタップして使えます。</p>
     <div class="roster-add-row">
@@ -695,7 +795,7 @@
     <div class="roster-chips" id="customMoveChips"></div>
   </div>
 
-  <div class="card">
+  <div class="card edit-only">
     <h2>対戦を記録する</h2>
     <div id="participantList"></div>
     <button type="button" class="add-participant-btn" id="addParticipantBtn">＋ 参加者を追加</button>
@@ -738,6 +838,8 @@
   const STORAGE_KEY = 'jiyuritsu-janken-rounds';
   const STORAGE_KEY_CUSTOM = 'jiyuritsu-janken-custom-moves';
   const STORAGE_KEY_ROSTER = 'jiyuritsu-janken-roster';
+  const SHARED = true; // 全員で同じデータを見る/編集するので共有ストレージを使う
+  const POLL_INTERVAL_MS = 4000;
   const penClasses = ['a','b','c','d'];
   const STANDARD_MOVES = [
     { key:'gu',    label:'グー',   emoji:'✊' },
@@ -751,6 +853,9 @@
   let roster = []; // 事前登録した参加者名のリスト
   let draftParticipants = []; // [{name, nameLocked, manualNameMode, mode: 'gu'|'choki'|'pa'|'custom'|null, customText}]
   let draftWinner = null;
+  let currentMode = 'edit'; // 'edit' | 'view'
+  let pollTimer = null;
+  let resetConfirmTimer = null;
 
   const participantListEl = document.getElementById('participantList');
   const addParticipantBtn = document.getElementById('addParticipantBtn');
@@ -768,11 +873,64 @@
   const customMoveInput = document.getElementById('customMoveInput');
   const customMoveAddBtn = document.getElementById('customMoveAddBtn');
   const customMoveChipsEl = document.getElementById('customMoveChips');
+  const modeEditBtn = document.getElementById('modeEditBtn');
+  const modeViewBtn = document.getElementById('modeViewBtn');
+  const resetBtn = document.getElementById('resetBtn');
 
   function showToast(msg){
     toastEl.textContent = msg;
     toastEl.classList.add('show');
     setTimeout(()=> toastEl.classList.remove('show'), 1600);
+  }
+
+  /* ---- モード切り替え ---- */
+  function setMode(mode){
+    currentMode = mode;
+    document.body.classList.toggle('view-mode', mode === 'view');
+    modeEditBtn.classList.toggle('active', mode === 'edit');
+    modeViewBtn.classList.toggle('active', mode === 'view');
+  }
+  modeEditBtn.addEventListener('click', () => setMode('edit'));
+  modeViewBtn.addEventListener('click', () => setMode('view'));
+
+  /* ---- リセット（誤タップ防止に2段階） ---- */
+  resetBtn.addEventListener('click', async () => {
+    if (!resetBtn.classList.contains('confirming')){
+      resetBtn.classList.add('confirming');
+      resetBtn.textContent = '本当に消す？もう一度タップ';
+      clearTimeout(resetConfirmTimer);
+      resetConfirmTimer = setTimeout(() => {
+        resetBtn.classList.remove('confirming');
+        resetBtn.textContent = '🗑 全部リセット';
+      }, 3000);
+      return;
+    }
+    clearTimeout(resetConfirmTimer);
+    resetBtn.classList.remove('confirming');
+    resetBtn.textContent = '🗑 全部リセット';
+    await resetAll();
+  });
+
+  async function resetAll(){
+    rounds = [];
+    roster = [];
+    customMoveHistory = [];
+    try{
+      await window.storage.set(STORAGE_KEY, JSON.stringify(rounds), SHARED);
+      await window.storage.set(STORAGE_KEY_ROSTER, JSON.stringify(roster), SHARED);
+      await window.storage.set(STORAGE_KEY_CUSTOM, JSON.stringify(customMoveHistory), SHARED);
+    }catch(e){
+      console.error('リセットに失敗しました', e);
+      showToast('リセットに失敗しました');
+      return;
+    }
+    resetDraft();
+    renderRoster();
+    renderCustomMoveManagement();
+    renderWinnerChoices();
+    renderHistory();
+    renderStats();
+    showToast('全部リセットしました');
   }
 
   function newParticipant(name){
@@ -973,6 +1131,8 @@
       }
     }
 
+    // 送信直前に最新のデータを取り直してから追加する（他の人の記録を消さないため）
+    await loadRounds();
     rounds.unshift(round);
     await persistRounds();
     updateCustomMoveHistory(draftParticipants);
@@ -986,7 +1146,7 @@
 
   async function loadRoster(){
     try{
-      const res = await window.storage.get(STORAGE_KEY_ROSTER, false);
+      const res = await window.storage.get(STORAGE_KEY_ROSTER, SHARED);
       if (res && res.value){
         roster = JSON.parse(res.value);
       }
@@ -997,7 +1157,7 @@
 
   async function persistRoster(){
     try{
-      await window.storage.set(STORAGE_KEY_ROSTER, JSON.stringify(roster), false);
+      await window.storage.set(STORAGE_KEY_ROSTER, JSON.stringify(roster), SHARED);
     }catch(e){
       console.error('参加者リストの保存に失敗しました', e);
       showToast('保存に失敗しました');
@@ -1122,7 +1282,7 @@
 
   async function persistRounds(){
     try{
-      await window.storage.set(STORAGE_KEY, JSON.stringify(rounds), false);
+      await window.storage.set(STORAGE_KEY, JSON.stringify(rounds), SHARED);
     }catch(e){
       console.error('保存に失敗しました', e);
       showToast('保存に失敗しました');
@@ -1131,7 +1291,7 @@
 
   async function loadRounds(){
     try{
-      const res = await window.storage.get(STORAGE_KEY, false);
+      const res = await window.storage.get(STORAGE_KEY, SHARED);
       if (res && res.value){
         rounds = JSON.parse(res.value);
       }
@@ -1153,7 +1313,7 @@
 
   async function persistCustomMoves(){
     try{
-      await window.storage.set(STORAGE_KEY_CUSTOM, JSON.stringify(customMoveHistory), false);
+      await window.storage.set(STORAGE_KEY_CUSTOM, JSON.stringify(customMoveHistory), SHARED);
     }catch(e){
       console.error('独自手の保存に失敗しました', e);
     }
@@ -1161,7 +1321,7 @@
 
   async function loadCustomMoves(){
     try{
-      const res = await window.storage.get(STORAGE_KEY_CUSTOM, false);
+      const res = await window.storage.get(STORAGE_KEY_CUSTOM, SHARED);
       if (res && res.value){
         customMoveHistory = JSON.parse(res.value);
       }
@@ -1219,7 +1379,7 @@
       time.textContent = formatTime(r.timestamp);
       top.appendChild(time);
       const delBtn = document.createElement('button');
-      delBtn.className = 'delete-round-btn';
+      delBtn.className = 'delete-round-btn edit-only';
       delBtn.textContent = '削除';
       delBtn.addEventListener('click', () => deleteRound(r.id));
       top.appendChild(delBtn);
@@ -1294,6 +1454,21 @@
 
   searchInput.addEventListener('input', renderHistory);
 
+  /* ---- 他の人の更新を定期的に取り込む（見た目の更新のみ。編集中のフォームは邪魔しない） ---- */
+  async function pollUpdates(){
+    try{
+      await loadRounds();
+      await loadRoster();
+      await loadCustomMoves();
+      renderHistory();
+      renderStats();
+      renderRoster();
+      renderCustomMoveManagement();
+    }catch(e){
+      console.error('自動更新に失敗しました', e);
+    }
+  }
+
   async function init(){
     await loadRounds();
     await loadCustomMoves();
@@ -1305,6 +1480,8 @@
     renderHistory();
     renderStats();
     renderParticipantForm();
+    setMode('edit');
+    pollTimer = setInterval(pollUpdates, POLL_INTERVAL_MS);
   }
 
   init();
