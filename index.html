@@ -1148,12 +1148,11 @@
 
   async function loadRoster(){ /* loadRounds() が兼ねる */ }
 
-  async function persistRoster(){
-    try{
+  try{
       await saveData({
         rounds,
         roster,
-        customMoves
+        customMoves: customMoveHistory
       });
 
     }catch(e){
