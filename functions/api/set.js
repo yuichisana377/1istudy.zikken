@@ -7,3 +7,13 @@ export async function onRequest({ env, request }) {
   }));
 }
 
+export async function onRequestPost(context) {
+  const id = context.env.details.idFromName("global");
+  const stub = context.env.details.get(id);
+  const body = await context.request.text();
+  return stub.fetch(new Request("https://do/set", {
+    method: "POST",
+    body,
+    headers: { "Content-Type": "application/json" }
+  }));
+}
