@@ -1,4 +1,4 @@
-export class details {
+export class Details {
   constructor(state) {
     this.state = state;
   }
