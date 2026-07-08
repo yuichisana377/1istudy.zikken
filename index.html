@@ -558,6 +558,104 @@
   }
   .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
 
+  /* ============================
+   📱 スマホ最適化
+   ============================ */
+@media (max-width: 600px){
+
+  body{
+    background-size: 100% 32px;
+  }
+
+  .binder{
+    display:none; /* スマホでは左の穴を非表示 */
+  }
+
+  .wrap{
+    padding:20px 14px 60px 14px;
+    max-width:100%;
+  }
+
+  header.page-head h1{
+    font-size:26px;
+  }
+
+  .card{
+    padding:14px 16px;
+    margin-bottom:18px;
+  }
+
+  .participant-block{
+    padding:10px 12px;
+  }
+
+  .move-choices{
+    gap:6px;
+  }
+
+  .move-btn{
+    flex:1 1 calc(50% - 6px);
+    justify-content:center;
+    padding:10px 0;
+    font-size:15px;
+  }
+
+  .name-chip,
+  .roster-chip,
+  .custom-history-chip{
+    padding:6px 10px;
+    font-size:13px;
+  }
+
+  .winner-choice{
+    flex:1 1 calc(50% - 6px);
+    text-align:center;
+    padding:10px 0;
+  }
+
+  textarea.memo-input{
+    font-size:14px;
+  }
+
+  .round-card{
+    padding:12px 12px;
+    margin-bottom:12px;
+  }
+
+  .vs-line{
+    gap:6px;
+  }
+
+  .p-tag{
+    padding:6px 10px;
+  }
+
+  .p-tag .p-item{
+    font-size:13.5px;
+  }
+
+  .history-toolbar{
+    flex-direction:column;
+    align-items:stretch;
+  }
+
+  .history-toolbar input[type=text]{
+    width:100%;
+  }
+
+  .stats-chip{
+    padding:6px 10px;
+    font-size:13px;
+  }
+
+  .submit-btn{
+    width:100%;
+    padding:12px 0;
+    font-size:15px;
+  }
+}
+
+
   ::selection{ background:#f0d9d5; }
 </style>
 </head>
