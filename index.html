@@ -1148,18 +1148,19 @@
 
   async function loadRoster(){ /* loadRounds() が兼ねる */ }
 
-  try{
+  async function persistRoster(){
+    try{
       await saveData({
         rounds,
         roster,
         customMoves: customMoveHistory
       });
-
     }catch(e){
       console.error('参加者リストの保存に失敗しました', e);
       showToast('保存に失敗しました');
     }
   }
+
 
   function renderRoster(){
     rosterChipsEl.innerHTML = '';
