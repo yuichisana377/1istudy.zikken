@@ -22,15 +22,21 @@
   let rounds = [];
   let customMoveHistory = []; // 参加者全員で共有する独自手の履歴
   let roster = []; // 事前登録した参加者名のリスト
-  let draftParticipants = []; // [{name, mode: 'gu'|'choki'|'pa'|'karate'|'custom'|null, customText}]
+  // draftParticipants: [{name, mode, customText, realMode, realCustomText}]
+  //   mode/customText      … 表面上の手
+  //   realMode/realCustomText … 実質的な手
+  let draftParticipants = [];
   let draftWinner = null;
   let currentMode = 'edit'; // 'edit' | 'view'
+  let formStep = 'surface'; // 'surface' | 'real'
   let pollTimer = null;
 
   const participantListEl = document.getElementById('participantList');
   const winnerChoicesEl = document.getElementById('winnerChoices');
   const memoInput = document.getElementById('memoInput');
   const submitBtn = document.getElementById('submitBtn');
+  const nextStepBtn = document.getElementById('nextStepBtn');
+  const backStepBtn = document.getElementById('backStepBtn');
   const historyList = document.getElementById('historyList');
   const historyCount = document.getElementById('historyCount');
   const searchInput = document.getElementById('searchInput');
@@ -160,7 +166,7 @@
   }
 
   function newParticipant(name){
-    return { name: name || '', mode: null, customText: '' };
+    return { name: name || '', mode: null, customText: '', realMode: null, realCustomText: '' };
   }
 
   function syncNamesFromRoster(){
@@ -173,18 +179,44 @@
     draftParticipants = [newParticipant(''), newParticipant('')];
     syncNamesFromRoster();
     draftWinner = null;
+    formStep = 'surface';
     memoInput.value = '';
     renderParticipantForm();
+    updateStepButtons();
   }
 
-  function participantItemText(p){
-    if (p.mode === 'custom') return p.customText.trim();
+  // 表面上の手（グー・チョキ・パー・空手・独自手のいずれか）のテキスト
+  function surfaceItemText(p){
+    if (p.mode === 'custom') return (p.customText || '').trim();
     const std = STANDARD_MOVES.find(m => m.key === p.mode);
     return std ? std.label : '';
   }
 
+  // 実質的な手のテキスト（Step②で入力。未入力なら空文字）
+  function realItemText(p){
+    if (p.realMode === 'custom') return (p.realCustomText || '').trim();
+    const std = STANDARD_MOVES.find(m => m.key === p.realMode);
+    return std ? std.label : '';
+  }
+
+  function updateStepButtons(){
+    const isReal = formStep === 'real';
+    backStepBtn.style.display = isReal ? 'inline-flex' : 'none';
+    nextStepBtn.style.display = isReal ? 'none' : 'inline-flex';
+    submitBtn.textContent = isReal ? 'この対戦を記録する（表＋実）' : 'この対戦を記録する（表面のみ）';
+  }
+
   function renderParticipantForm(){
     participantListEl.innerHTML = '';
+    const isReal = formStep === 'real';
+
+    const stepHeading = document.createElement('div');
+    stepHeading.className = 'step-heading';
+    stepHeading.textContent = isReal
+      ? '② 実質的な手を入力する'
+      : '① 表面上の手を入力する';
+    participantListEl.appendChild(stepHeading);
+
     draftParticipants.forEach((p, i) => {
       const block = document.createElement('div');
       block.className = 'participant-block';
@@ -200,7 +232,19 @@
       const nameSection = document.createElement('div');
       nameSection.className = 'name-picker-wrap';
 
-      if (p.name){
+      if (isReal){
+        // 実質的な手のステップでは、名前は表示のみ（変更不可）。表面上の手を振り返り表示。
+        const nameDisplay = document.createElement('div');
+        nameDisplay.className = 'name-display';
+        nameDisplay.textContent = '👤 ' + (p.name || '（名無し）');
+        nameSection.appendChild(nameDisplay);
+
+        const recap = document.createElement('div');
+        recap.className = 'surface-recap';
+        const surfaceText = surfaceItemText(p);
+        recap.innerHTML = '表面上の手：' + (surfaceText ? moveItemHtml(surfaceText) : '（未選択）');
+        nameSection.appendChild(recap);
+      } else if (p.name){
         const nameDisplay = document.createElement('div');
         nameDisplay.className = 'name-display';
         nameDisplay.textContent = '👤 ' + p.name;
@@ -227,28 +271,38 @@
 
       const moves = document.createElement('div');
       moves.className = 'move-choices';
+      const curMode = isReal ? p.realMode : p.mode;
       STANDARD_MOVES.forEach(m => {
         const btn = document.createElement('div');
-        btn.className = 'move-btn' + (p.mode === m.key ? ' selected' : '');
+        btn.className = 'move-btn' + (curMode === m.key ? ' selected' : '');
         btn.innerHTML = `<span class="emoji">${m.emoji}</span><span>${moveLabelHtml(m)}</span>`;
         btn.addEventListener('click', () => {
-          draftParticipants[i].mode = (p.mode === m.key) ? null : m.key;
+          if (isReal){
+            draftParticipants[i].realMode = (p.realMode === m.key) ? null : m.key;
+          } else {
+            draftParticipants[i].mode = (p.mode === m.key) ? null : m.key;
+          }
           renderParticipantForm();
         });
         moves.appendChild(btn);
       });
       const customBtn = document.createElement('div');
-      customBtn.className = 'move-btn custom' + (p.mode === 'custom' ? ' selected' : '');
+      customBtn.className = 'move-btn custom' + (curMode === 'custom' ? ' selected' : '');
       customBtn.innerHTML = `<span class="emoji">✍️</span><span>独自手</span>`;
       customBtn.addEventListener('click', () => {
-        draftParticipants[i].mode = (p.mode === 'custom') ? null : 'custom';
-        if (draftParticipants[i].mode === 'custom') draftParticipants[i].customText = '';
+        if (isReal){
+          draftParticipants[i].realMode = (p.realMode === 'custom') ? null : 'custom';
+          if (draftParticipants[i].realMode === 'custom') draftParticipants[i].realCustomText = '';
+        } else {
+          draftParticipants[i].mode = (p.mode === 'custom') ? null : 'custom';
+          if (draftParticipants[i].mode === 'custom') draftParticipants[i].customText = '';
+        }
         renderParticipantForm();
       });
       moves.appendChild(customBtn);
       block.appendChild(moves);
 
-      if (p.mode === 'custom'){
+      if (curMode === 'custom'){
         const history = customMoveHistory.filter(Boolean);
         const historyWrap = document.createElement('div');
         historyWrap.className = 'custom-history';
@@ -261,12 +315,14 @@
         if (history.length > 0){
           const chipsWrap = document.createElement('div');
           chipsWrap.className = 'custom-history-chips';
+          const curText = isReal ? p.realCustomText : p.customText;
           history.forEach(move => {
             const chip = document.createElement('div');
-            chip.className = 'custom-history-chip' + (p.customText === move ? ' selected' : '');
+            chip.className = 'custom-history-chip' + (curText === move ? ' selected' : '');
             chip.textContent = move;
             chip.addEventListener('click', () => {
-              draftParticipants[i].customText = move;
+              if (isReal) draftParticipants[i].realCustomText = move;
+              else draftParticipants[i].customText = move;
               renderParticipantForm();
             });
             chipsWrap.appendChild(chip);
@@ -302,15 +358,35 @@
     winnerChoicesEl.appendChild(drawChip);
   }
 
+  /* ---- Step① →「次へ」：表面上の手が両方入っていれば Step②へ進む ---- */
+  nextStepBtn.addEventListener('click', () => {
+    const items = draftParticipants.map(p => surfaceItemText(p));
+    if (items.some(t => t === '')){
+      showToast('両方の「表面上の手」を選んでね');
+      return;
+    }
+    formStep = 'real';
+    renderParticipantForm();
+    updateStepButtons();
+  });
+
+  /* ---- Step② →「戻る」：表面上の手のステップに戻る（実質的な手の入力内容は保持） ---- */
+  backStepBtn.addEventListener('click', () => {
+    formStep = 'surface';
+    renderParticipantForm();
+    updateStepButtons();
+  });
+
   async function submitRound(){
     const withItems = draftParticipants.map(p => ({
       name: p.name.trim() || '名無し',
-      item: participantItemText(p)
+      item: surfaceItemText(p),
+      realItem: realItemText(p)
     }));
     const cleaned = withItems.filter(p => p.item !== '');
 
     if (cleaned.length < 2){
-      showToast('両方の手を選んでね');
+      showToast('両方の「表面上の手」を選んでね');
       return;
     }
 
@@ -516,13 +592,23 @@
     }
   }
 
+  // 表面上の手・実質的な手のどちらで使われた独自手も履歴に登録する
   function updateCustomMoveHistory(participants){
     participants.forEach(p => {
-      if (p.mode !== 'custom') return;
-      const text = p.customText.trim();
-      if (!text) return;
-      customMoveHistory = customMoveHistory.filter(m => m !== text);
-      customMoveHistory.unshift(text);
+      if (p.mode === 'custom'){
+        const text = (p.customText || '').trim();
+        if (text){
+          customMoveHistory = customMoveHistory.filter(m => m !== text);
+          customMoveHistory.unshift(text);
+        }
+      }
+      if (p.realMode === 'custom'){
+        const text = (p.realCustomText || '').trim();
+        if (text){
+          customMoveHistory = customMoveHistory.filter(m => m !== text);
+          customMoveHistory.unshift(text);
+        }
+      }
     });
     customMoveHistory = customMoveHistory.slice(0, MAX_CUSTOM_MOVES);
   }
@@ -564,7 +650,7 @@
     const query = searchInput.value.trim().toLowerCase();
     const filtered = rounds.filter(r => {
       if (!query) return true;
-      const hay = r.participants.map(p => p.name + ' ' + p.item).join(' ').toLowerCase() + ' ' + (r.memo||'').toLowerCase();
+      const hay = r.participants.map(p => p.name + ' ' + p.item + ' ' + (p.realItem || '')).join(' ').toLowerCase() + ' ' + (r.memo||'').toLowerCase();
       return hay.includes(query);
     });
 
@@ -610,7 +696,12 @@
         tag.className = 'p-tag' + (r.winner === i ? ' win' : '');
         tag.style.background = `var(--pen-${cls}-bg)`;
         tag.style.color = `var(--pen-${cls})`;
-        tag.innerHTML = `<span class="p-name">${escapeHtml(p.name)}</span><span class="p-item">${moveItemHtml(p.item)}</span>`;
+        let inner = `<span class="p-name">${escapeHtml(p.name)}</span><span class="p-item">${moveItemHtml(p.item)}</span>`;
+        // 実質的な手は編集モードでのみ表示（視聴モードでは表面上の手だけを見せる）
+        if (p.realItem){
+          inner += `<span class="p-real edit-only">実：${moveItemHtml(p.realItem)}</span>`;
+        }
+        tag.innerHTML = inner;
         vsLine.appendChild(tag);
       });
       if (r.winner === 'draw'){
@@ -632,13 +723,16 @@
     });
   }
 
+  // 使われた技ランキングは「表面上の手」「実質的な手」の両方を集計対象にする
   function renderStats(){
     const counts = {};
     rounds.forEach(r => {
       r.participants.forEach(p => {
-        const key = p.item.trim();
-        if (!key) return;
-        counts[key] = (counts[key] || 0) + 1;
+        [p.item, p.realItem].forEach(val => {
+          const key = (val || '').trim();
+          if (!key) return;
+          counts[key] = (counts[key] || 0) + 1;
+        });
       });
     });
     const sorted = Object.entries(counts).sort((a,b) => b[1]-a[1]).slice(0, 12);
@@ -785,6 +879,7 @@
     renderStats();
     renderScores();
     renderParticipantForm();
+    updateStepButtons();
     setMode('edit');
     pollTimer = setInterval(pollUpdates, POLL_INTERVAL_MS);
   }
