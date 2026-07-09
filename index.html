@@ -21,8 +21,8 @@
 
   <header class="page-head">
     <h1>自由律じゃんけん メモ帳 <span class="stamp-mini">判定</span></h1>
-    <p>グー・チョキ・パー・空手（くうて＝何も出さない手）はワンタップ、それ以外は「独自手」で自由入力。<br>
-    誰が何を出したか、判定はどうだったかをその場でメモ。</p>
+    <p>1対1のじゃんけん専用。グー・チョキ・パー・空手（くうて＝何も出さない手）はワンタップ、それ以外は「独自手」で自由入力。<br>
+    先手・後手が何を出したか、判定はどうだったかをその場でメモ。</p>
   </header>
 
   <div class="mode-toolbar">
@@ -66,7 +66,6 @@
   <div class="card edit-only">
     <h2>対戦を記録する</h2>
     <div id="participantList"></div>
-    <button type="button" class="add-participant-btn" id="addParticipantBtn">＋ 参加者を追加</button>
 
     <div class="winner-section">
       <span class="winner-label">判定（勝者を選ぶ）</span>
@@ -86,6 +85,11 @@
   <div class="card">
     <h2>使われた技ランキング</h2>
     <div class="stats-list" id="statsList"></div>
+  </div>
+
+  <div class="card">
+    <h2>得点（勝敗ランキング）</h2>
+    <div class="score-list" id="scoreList"></div>
   </div>
 
   <div class="card">
