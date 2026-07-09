@@ -197,8 +197,15 @@ header.page-head p{
   margin:0 0 18px;
   line-height:1.6;
 }
-body.view-mode .view-mode-banner{ display:block; }
-body.view-mode .edit-only{ display:none !important; }
+body.mode-referee .view-mode-banner,
+body.mode-player .view-mode-banner{ display:block; }
+
+/* 編集モード以外（審判・プレイヤー）では入力・管理系UIを隠す */
+body.mode-referee .edit-only,
+body.mode-player .edit-only{ display:none !important; }
+
+/* 実質的な手はプレイヤーモードだけ隠す（審判モードでは編集モードと同じく表示） */
+body.mode-player .real-move{ display:none !important; }
 
 .roster-hint{
   margin:0 0 12px;
@@ -856,8 +863,8 @@ textarea.memo-input{
   .mode-btn{
     flex:1;
     text-align:center;
-    padding:6px 4px;
-    font-size:10.5px;
+    padding:6px 2px;
+    font-size:9.5px;
     white-space:nowrap;
   }
   .reset-menu-wrap{
