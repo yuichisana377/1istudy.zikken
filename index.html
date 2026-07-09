@@ -22,7 +22,7 @@
   <header class="page-head">
     <h1>自由律じゃんけん メモ帳 <span class="stamp-mini">判定</span></h1>
     <p>1対1のじゃんけん専用。グー・チョキ・パー・空手 はワンタップ、それ以外は「独自手」で自由入力。<br>
-    先手・後手が何を出したか、判定はどうだったかをその場でメモ。</p>
+    まず「表面上の手」を記録し、必要なら続けて「実質的な手」も記録できます。判定はどうだったかをその場でメモ。</p>
   </header>
 
   <div class="mode-toolbar">
@@ -40,8 +40,8 @@
     </div>
   </div>
 
-  <p class="mode-note">このメモ帳のデータは、このページを開いている全員で共有されます。数秒おきに自動更新されるので、誰かが記録した対戦は他の人の画面にも反映されます。入力しない人は「視聴モード」にすると、結果とランキングだけを見やすく表示できます。</p>
-  <p class="view-mode-banner">👀 視聴モード中：入力欄は非表示です。対戦結果とランキングを見るだけのモードです。自動的に最新の状態に更新されます。</p>
+  <p class="mode-note">このメモ帳のデータは、このページを開いている全員で共有されます。数秒おきに自動更新されるので、誰かが記録した対戦は他の人の画面にも反映されます。入力しない人は「視聴モード」にすると、結果とランキングだけを見やすく表示できます（視聴モードでは「実質的な手」は表示されません）。</p>
+  <p class="view-mode-banner">👀 視聴モード中：入力欄は非表示です。対戦結果（表面上の手）とランキングを見るだけのモードです。自動的に最新の状態に更新されます。</p>
 
   <div class="card edit-only">
     <h2>参加者リストを管理</h2>
@@ -55,7 +55,7 @@
 
   <div class="card edit-only">
     <h2>独自手リストを管理</h2>
-    <p class="roster-hint">グー・チョキ・パー・空手（くうて）以外の技も先に登録しておくと、対戦のたびに考えなくても「みんなの手から選ぶ」でタップして使えます。</p>
+    <p class="roster-hint">グー・チョキ・パー・空手以外の技も先に登録しておくと、対戦のたびに考えなくても「みんなの手から選ぶ」でタップして使えます。（表面上の手・実質的な手のどちらでも使えます）</p>
     <div class="roster-add-row">
       <input type="text" id="customMoveInput" placeholder="例：無限、朝ごはん、季語入りグー…">
       <button type="button" id="customMoveAddBtn" class="roster-add-btn">追加</button>
@@ -78,6 +78,8 @@
     </div>
 
     <div class="submit-row">
+      <button type="button" class="back-btn" id="backStepBtn">← 表面上の手に戻る</button>
+      <button type="button" class="next-btn" id="nextStepBtn">次へ（実質的な手を入力）</button>
       <button type="button" class="submit-btn" id="submitBtn">この対戦を記録する</button>
     </div>
   </div>
