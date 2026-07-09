@@ -684,16 +684,189 @@ textarea.memo-input{
 .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
 
 /* ============================
- 📱 スマホ最適化
+ 📱 スマホ最適化（縦スクロールをほぼ無くす詰め込みレイアウト）
  ============================ */
 @media (max-width: 600px){
 
   body{
-    background-size: 100% 32px;
+    background-size: 100% 22px;
   }
 
   .binder{
     display:none; /* スマホでは左の穴を非表示 */
+  }
+
+  .wrap{
+    padding:8px 8px 14px 8px;
+    max-width:100%;
+  }
+
+  /* ---- ヘッダーは最小限に ---- */
+  header.page-head{ margin-bottom:8px; }
+  header.page-head h1{
+    font-size:17px;
+    gap:6px;
+    margin:0 0 2px;
+  }
+  header.page-head h1 .stamp-mini{
+    font-size:9.5px;
+    padding:1px 5px;
+    border-width:1.5px;
+  }
+  header.page-head p{
+    font-size:10px;
+    line-height:1.35;
+  }
+
+  /* ---- モード切替・リセットは横一列に圧縮 ---- */
+  .mode-toolbar{
+    flex-direction:row;
+    align-items:stretch;
+    gap:6px;
+    margin-bottom:8px;
+  }
+  .mode-toggle{
+    flex:1;
+    min-width:0;
+  }
+  .mode-btn{
+    flex:1;
+    text-align:center;
+    padding:6px 4px;
+    font-size:10.5px;
+    white-space:nowrap;
+  }
+  .reset-menu-wrap{
+    width:auto;
+    flex:0 0 auto;
+  }
+  .reset-btn{
+    width:auto;
+    text-align:center;
+    padding:6px 10px;
+    font-size:10.5px;
+    white-space:nowrap;
+  }
+  .reset-menu{
+    left:auto;
+    right:0;
+    width:max-content;
+    min-width:170px;
+  }
+  .reset-menu-item{
+    font-size:11.5px;
+    padding:7px 8px;
+  }
+
+  /* ---- 注意書きは大幅圧縮（視聴モード時のみ意味があるバナーは残す） ---- */
+  .mode-note{
+    display:none;
+  }
+  .view-mode-banner{
+    font-size:10px;
+    padding:5px 8px;
+    margin:0 0 8px;
+    line-height:1.4;
+  }
+
+  /* ---- カード全般を圧縮 ---- */
+  .card{
+    padding:8px 10px;
+    margin-bottom:8px;
+    border-radius:4px;
+  }
+  .card h2{
+    font-size:12.5px;
+    margin:0 0 6px;
+    gap:5px;
+  }
+  .card h2::before{
+    width:3px;
+    height:11px;
+  }
+
+  .roster-hint{
+    font-size:10px;
+    line-height:1.4;
+    margin:0 0 6px;
+  }
+  .roster-add-row{
+    gap:5px;
+    margin-bottom:6px;
+  }
+  .roster-add-row input[type=text]{
+    padding:6px 7px;
+    font-size:12px;
+  }
+  .roster-add-btn{
+    padding:0 10px;
+    font-size:11.5px;
+  }
+  .roster-chips{ gap:5px; }
+  .roster-chip{
+    padding:3px 4px 3px 9px;
+    font-size:11px;
+  }
+
+  /* ---- 参加者ブロックを圧縮 ---- */
+  .participant-block{
+    padding:6px 8px;
+    margin-bottom:6px;
+    border-radius:5px;
+    width: 100%;
+    max-width: 100%;
+    display: block;
+  }
+  .participant-block-head{ margin-bottom:5px; gap:5px; }
+  .participant-index-label{ font-size:11.5px; }
+  .participant-block-head .remove-btn{ font-size:12px; padding:1px 3px; }
+
+  .name-picker-wrap{
+    margin-bottom:6px;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+  }
+  .name-picker-label{ font-size:9.5px; margin-bottom:3px; }
+  .name-display{
+    font-size:12px;
+    max-width: 100%;
+    display: block;
+    word-break: break-word;
+  }
+  .manual-name-input{
+    padding:6px 7px;
+    font-size:12px;
+    width: 100%;
+    box-sizing: border-box;
+    display: block;
+    margin: 0 !important;
+  }
+
+  /* ---- 手の選択：3列グリッドで縦を詰める ---- */
+  .move-choices{
+    display:grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap:5px;
+  }
+  .move-btn{
+    width:auto;
+    padding:6px 2px;
+    font-size:11px;
+    gap:3px;
+    justify-content:center;
+    border-radius:12px;
+  }
+  .move-btn .emoji{ font-size:13px; }
+  .move-btn rt{ font-size:7.5px; }
+
+  .custom-history{ margin-top:6px; padding-top:5px; }
+  .custom-history-label{ font-size:9px; margin-bottom:4px; }
+  .custom-history-chips{ gap:4px; }
+  .name-chip,
+  .custom-history-chip{
+    padding:4px 8px;
+    font-size:10.5px;
   }
 
   .add-participant-btn{
@@ -701,144 +874,121 @@ textarea.memo-input{
     display: block;
     box-sizing: border-box;
     text-align: center;
+    padding:5px 8px;
+    font-size:11px;
+    margin:2px 0 8px;
   }
 
-  .name-picker-wrap{
-    width: 100%;
-    max-width: 100%;
-    overflow: hidden;
-  }
-
-  .manual-name-input{
-    width: calc(100% - 8px);
-    max-width: 100%;
-    width: 100%;
-    box-sizing: border-box;
-    display: block;
-    margin: 0 !important;
-  }
-
-
-  .wrap{
-    padding:20px 14px 60px 14px;
-    max-width:100%;
-    padding-left: 0;
-    padding-right: 0;
-  }
-
-  header.page-head h1{
-    font-size:26px;
-  }
-
-  .mode-toolbar{
-    flex-direction:column;
-    align-items:stretch;
-  }
-  .mode-toggle{
-    width:100%;
-  }
-  .mode-btn{
-    flex:1;
-    text-align:center;
-  }
-  .reset-menu-wrap{
-    width:100%;
-  }
-  .reset-btn{
-    width:100%;
-    text-align:center;
-  }
-  .reset-menu{
-    left:0;
-    right:0;
-    width:100%;
-    min-width:0;
-  }
-
-  .card{
-    padding:14px 16px;
-    margin-bottom:18px;
-    padding-left: 10px;
-    padding-right: 10px;
-  }
-
-  .participant-block{
-    padding:10px 12px;
-    width: 100%;
-    max-width: 100%;
-    display: block;
-  }
-
-  .name-display{
-    max-width: 100%;
-    display: block;
-    word-break: break-word;
-  }
-
-  .move-choices{
-    gap:6px;
-    flex-direction: column;
-  }
-
-  .move-btn{
-    width: 100%;
-    flex: none;
-    justify-content:center;
-    padding:10px 0;
-    font-size:15px;
-  }
-  .name-chip,
-  .roster-chip,
-  .custom-history-chip{
-    padding:6px 10px;
-    font-size:13px;
-  }
-
+  /* ---- 判定・メモ・送信ボタンを圧縮 ---- */
+  .winner-section{ margin:8px 0; }
+  .winner-label{ font-size:10px; margin-bottom:5px; }
+  .winner-choices{ gap:5px; }
   .winner-choice{
-    flex:1 1 calc(50% - 6px);
+    flex:1 1 calc(33.333% - 4px);
     text-align:center;
-    padding:10px 0;
+    padding:6px 2px;
+    font-size:10.5px;
+    border-radius:12px;
   }
 
   textarea.memo-input{
-    font-size:14px;
+    font-size:12px;
+    padding:6px 7px;
+    min-height:28px;
+    margin-top:3px;
+  }
+
+  .submit-row{ margin-top:8px; }
+  .submit-btn{
+    width:100%;
+    padding:9px 0;
+    font-size:12.5px;
+    border-radius:4px;
+  }
+
+  /* ---- ランキングは横スクロールなしで枠内に収める ---- */
+  .stats-list{
+    max-height:84px;
+    overflow-y:auto;
+    gap:5px;
+    padding-right:2px;
+    scrollbar-width:thin;
+  }
+  .stats-chip{
+    padding:3px 7px;
+    font-size:10px;
+    border-radius:10px;
+  }
+
+  /* ---- 対戦メモ一覧は枠内スクロールにして全体の縦幅を抑える ---- */
+  .history-toolbar{
+    flex-direction:row;
+    align-items:stretch;
+    gap:5px;
+    margin-bottom:6px;
+  }
+  .history-toolbar input[type=text]{
+    width:auto;
+    min-width:0;
+    padding:6px 7px;
+    font-size:12px;
+  }
+  .history-count{ font-size:9.5px; }
+
+  #historyList{
+    max-height:32vh;
+    overflow-y:auto;
+    padding-right:2px;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:thin;
   }
 
   .round-card{
-    padding:12px 12px;
-    margin-bottom:12px;
+    padding:7px 8px;
+    margin-bottom:6px;
+    border-radius:3px;
+  }
+  .round-card:nth-child(odd),
+  .round-card:nth-child(even){
+    transform:none; /* 傾きは省スペース化のため無効化 */
   }
 
-  .vs-line{
-    gap:6px;
+  .round-top{ margin-bottom:4px; gap:6px; }
+  .round-time{ font-size:9px; }
+  .delete-round-btn{ font-size:10.5px; }
+
+  .vs-line{ gap:4px; margin-bottom:4px; }
+
+  .p-tag{ padding:4px 7px; border-radius:4px; }
+  .p-tag .p-name{ font-size:8px; }
+  .p-tag .p-item{ font-size:11px; }
+  .p-tag rt{ font-size:6.5px; }
+  .p-tag.win::after{
+    font-size:8px;
+    top:-7px; right:-5px;
+    padding:1px 5px;
+  }
+  .vs-sep{ font-size:11px; }
+  .draw-badge{ font-size:9px; padding:1px 6px; }
+
+  .round-memo{
+    font-size:10px;
+    padding-left:6px;
+    margin-top:4px;
   }
 
-  .p-tag{
-    padding:6px 10px;
-  }
+  .empty-state{ padding:18px 10px; font-size:11px; }
+  .empty-state .big{ font-size:14px; margin-bottom:4px; }
 
-  .p-tag .p-item{
-    font-size:13.5px;
+  /* ---- 内部スクロール枠の細いスクロールバー ---- */
+  #historyList::-webkit-scrollbar,
+  .stats-list::-webkit-scrollbar{
+    width:4px;
   }
-
-  .history-toolbar{
-    flex-direction:column;
-    align-items:stretch;
-  }
-
-  .history-toolbar input[type=text]{
-    width:100%;
-  }
-
-  .stats-chip{
-    padding:6px 10px;
-    font-size:13px;
-  }
-
-  .submit-btn{
-    width:100%;
-    padding:12px 0;
-    font-size:15px;
+  #historyList::-webkit-scrollbar-thumb,
+  .stats-list::-webkit-scrollbar-thumb{
+    background:var(--rule);
+    border-radius:4px;
   }
 }
 
