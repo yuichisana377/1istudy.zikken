@@ -50,7 +50,9 @@
   const customMoveAddBtn = document.getElementById('customMoveAddBtn');
   const customMoveChipsEl = document.getElementById('customMoveChips');
   const modeEditBtn = document.getElementById('modeEditBtn');
-  const modeViewBtn = document.getElementById('modeViewBtn');
+  const modeRefereeBtn = document.getElementById('modeRefereeBtn');
+  const modePlayerBtn = document.getElementById('modePlayerBtn');
+  const viewModeBanner = document.getElementById('viewModeBanner');
   const resetMenuBtn = document.getElementById('resetMenuBtn');
   const resetMenu = document.getElementById('resetMenu');
 
@@ -60,15 +62,24 @@
     setTimeout(()=> toastEl.classList.remove('show'), 1600);
   }
 
-  /* ---- モード切り替え ---- */
+  /* ---- モード切り替え：編集 / 審判（表面上の手＋実質的な手＋勝敗＋得点） / プレイヤー（表面上の手＋勝敗＋得点） ---- */
   function setMode(mode){
-    currentMode = mode;
-    document.body.classList.toggle('view-mode', mode === 'view');
+    currentMode = mode; // 'edit' | 'referee' | 'player'
+    document.body.classList.remove('mode-edit', 'mode-referee', 'mode-player');
+    document.body.classList.add('mode-' + mode);
     modeEditBtn.classList.toggle('active', mode === 'edit');
-    modeViewBtn.classList.toggle('active', mode === 'view');
+    modeRefereeBtn.classList.toggle('active', mode === 'referee');
+    modePlayerBtn.classList.toggle('active', mode === 'player');
+
+    if (mode === 'referee'){
+      viewModeBanner.textContent = '🧑\u200d⚖️ 審判モード中：入力欄は非表示です。編集モードと同じく、表面上の手・実質的な手・勝敗・得点ランキングすべてを確認できます。自動的に最新の状態に更新されます。';
+    } else if (mode === 'player'){
+      viewModeBanner.textContent = '🎮 プレイヤーモード中：入力欄は非表示です。表面上の手・勝敗・得点ランキングのみを表示します（実質的な手は表示されません）。自動的に最新の状態に更新されます。';
+    }
   }
   modeEditBtn.addEventListener('click', () => setMode('edit'));
-  modeViewBtn.addEventListener('click', () => setMode('view'));
+  modeRefereeBtn.addEventListener('click', () => setMode('referee'));
+  modePlayerBtn.addEventListener('click', () => setMode('player'));
 
   /* ---- リセットメニュー（3択） ---- */
   function closeResetMenu(){
@@ -697,9 +708,9 @@
         tag.style.background = `var(--pen-${cls}-bg)`;
         tag.style.color = `var(--pen-${cls})`;
         let inner = `<span class="p-name">${escapeHtml(p.name)}</span><span class="p-item">${moveItemHtml(p.item)}</span>`;
-        // 実質的な手は編集モードでのみ表示（視聴モードでは表面上の手だけを見せる）
+        // 実質的な手は編集モード・審判モードで表示（プレイヤーモードでは表面上の手だけを見せる）
         if (p.realItem){
-          inner += `<span class="p-real edit-only">実：${moveItemHtml(p.realItem)}</span>`;
+          inner += `<span class="p-real real-move">実：${moveItemHtml(p.realItem)}</span>`;
         }
         tag.innerHTML = inner;
         vsLine.appendChild(tag);
