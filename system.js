@@ -28,7 +28,6 @@
   let pollTimer = null;
 
   const participantListEl = document.getElementById('participantList');
-  const addParticipantBtn = document.getElementById('addParticipantBtn');
   const winnerChoicesEl = document.getElementById('winnerChoices');
   const memoInput = document.getElementById('memoInput');
   const submitBtn = document.getElementById('submitBtn');
@@ -36,6 +35,7 @@
   const historyCount = document.getElementById('historyCount');
   const searchInput = document.getElementById('searchInput');
   const statsList = document.getElementById('statsList');
+  const scoreList = document.getElementById('scoreList');
   const toastEl = document.getElementById('toast');
   const rosterInput = document.getElementById('rosterInput');
   const rosterAddBtn = document.getElementById('rosterAddBtn');
@@ -129,6 +129,7 @@
     renderWinnerChoices();
     renderHistory();
     renderStats();
+    renderScores();
     showToast('全部リセットしました');
   }
 
@@ -143,6 +144,7 @@
     renderWinnerChoices();
     renderHistory();
     renderStats();
+    renderScores();
     showToast('プレイヤー以外をリセットしました');
   }
 
@@ -153,6 +155,7 @@
     }catch(e){ return; }
     renderHistory();
     renderStats();
+    renderScores();
     showToast('メモ一覧をリセットしました');
   }
 
@@ -190,26 +193,8 @@
       head.className = 'participant-block-head';
       const label = document.createElement('span');
       label.className = 'participant-index-label';
-      label.textContent = '参加者' + (i + 1);
+      label.textContent = i === 0 ? '👤 先手' : '👤 後手';
       head.appendChild(label);
-
-      if (draftParticipants.length > 2){
-        const rm = document.createElement('button');
-        rm.type = 'button';
-        rm.className = 'remove-btn';
-        rm.textContent = '✕ 削除';
-        rm.addEventListener('click', () => {
-          draftParticipants.splice(i, 1);
-          syncNamesFromRoster();
-          if (typeof draftWinner === 'number'){
-            if (draftWinner === i) draftWinner = null;
-            else if (draftWinner > i) draftWinner -= 1;
-          }
-          renderParticipantForm();
-          renderWinnerChoices();
-        });
-        head.appendChild(rm);
-      }
       block.appendChild(head);
 
       const nameSection = document.createElement('div');
@@ -300,7 +285,7 @@
     draftParticipants.forEach((p, i) => {
       const chip = document.createElement('div');
       chip.className = 'winner-choice' + (draftWinner === i ? ' selected' : '');
-      chip.textContent = (p.name || ('参加者' + (i+1))) + ' の勝ち';
+      chip.textContent = (p.name || (i === 0 ? '先手' : '後手')) + ' の勝ち';
       chip.addEventListener('click', () => {
         draftWinner = (draftWinner === i) ? null : i;
         renderWinnerChoices();
@@ -317,13 +302,6 @@
     winnerChoicesEl.appendChild(drawChip);
   }
 
-  addParticipantBtn.addEventListener('click', () => {
-    draftParticipants.push(newParticipant(''));
-    syncNamesFromRoster();
-    renderParticipantForm();
-    renderWinnerChoices();
-  });
-
   async function submitRound(){
     const withItems = draftParticipants.map(p => ({
       name: p.name.trim() || '名無し',
@@ -332,7 +310,7 @@
     const cleaned = withItems.filter(p => p.item !== '');
 
     if (cleaned.length < 2){
-      showToast('2人以上、手を選んでね');
+      showToast('両方の手を選んでね');
       return;
     }
 
@@ -364,6 +342,7 @@
     renderWinnerChoices();
     renderHistory();
     renderStats();
+    renderScores();
     showToast('記録しました');
   }
 
@@ -556,6 +535,7 @@
     await persistRounds();
     renderHistory();
     renderStats();
+    renderScores();
     showToast('削除しました');
   }
 
@@ -677,6 +657,84 @@
     });
   }
 
+  /* ---- 得点（勝敗）ランキング ---- */
+  function computeScores(){
+    const stats = {}; // name -> {wins, losses, draws, plays}
+    rounds.forEach(r => {
+      r.participants.forEach((p, idx) => {
+        const name = p.name || '名無し';
+        if (!stats[name]) stats[name] = { wins:0, losses:0, draws:0, plays:0 };
+        stats[name].plays += 1;
+        if (r.winner === 'draw'){
+          stats[name].draws += 1;
+        } else if (typeof r.winner === 'number'){
+          if (r.winner === idx) stats[name].wins += 1;
+          else stats[name].losses += 1;
+        }
+      });
+    });
+    return stats;
+  }
+
+  function renderScores(){
+    const stats = computeScores();
+    const entries = Object.entries(stats);
+
+    if (entries.length === 0){
+      scoreList.innerHTML = `<div class="empty-state" style="padding:16px 0;">まだ得点がありません</div>`;
+      return;
+    }
+
+    entries.sort((a, b) => {
+      const sa = a[1], sb = b[1];
+      if (sb.wins !== sa.wins) return sb.wins - sa.wins;
+      if (sb.plays !== sa.plays) return sb.plays - sa.plays;
+      return a[0].localeCompare(b[0], 'ja');
+    });
+
+    const maxWins = Math.max(1, ...entries.map(([, s]) => s.wins));
+    const rankIcons = ['🥇', '🥈', '🥉'];
+
+    scoreList.innerHTML = '';
+    entries.forEach(([name, s], i) => {
+      const row = document.createElement('div');
+      row.className = 'score-row' + (i < 3 ? ' top' + (i + 1) : '');
+
+      const rank = document.createElement('div');
+      rank.className = 'score-rank';
+      rank.textContent = rankIcons[i] || String(i + 1);
+      row.appendChild(rank);
+
+      const inner = document.createElement('div');
+      inner.className = 'score-row-inner';
+
+      const top = document.createElement('div');
+      top.className = 'score-row-top';
+      const nameEl = document.createElement('span');
+      nameEl.className = 'score-name';
+      nameEl.textContent = name;
+      top.appendChild(nameEl);
+
+      const record = document.createElement('span');
+      record.className = 'score-record';
+      record.innerHTML = `<b>${s.wins}勝</b>${s.losses}敗${s.draws}分 ・ ${s.plays}戦`;
+      top.appendChild(record);
+
+      inner.appendChild(top);
+
+      const barWrap = document.createElement('div');
+      barWrap.className = 'score-bar-wrap';
+      const bar = document.createElement('div');
+      bar.className = 'score-bar';
+      bar.style.width = Math.round((s.wins / maxWins) * 100) + '%';
+      barWrap.appendChild(bar);
+      inner.appendChild(barWrap);
+
+      row.appendChild(inner);
+      scoreList.appendChild(row);
+    });
+  }
+
   function escapeHtml(str){
     return String(str)
       .replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')
@@ -693,6 +751,7 @@
       await loadCustomMoves();
       renderHistory();
       renderStats();
+      renderScores();
       renderRoster();
       renderCustomMoveManagement();
     }catch(e){
@@ -724,6 +783,7 @@
     renderWinnerChoices();
     renderHistory();
     renderStats();
+    renderScores();
     renderParticipantForm();
     setMode('edit');
     pollTimer = setInterval(pollUpdates, POLL_INTERVAL_MS);
