@@ -27,8 +27,9 @@
 
   <div class="mode-toolbar">
     <div class="mode-toggle" id="modeToggle">
-      <button type="button" class="mode-btn active" data-mode="edit" id="modeEditBtn">✏️ 編集モード</button>
-      <button type="button" class="mode-btn" data-mode="view" id="modeViewBtn">👀 視聴モード</button>
+      <button type="button" class="mode-btn active" data-mode="edit" id="modeEditBtn" title="編集モード：入力・管理ができます">✏️ 編集</button>
+      <button type="button" class="mode-btn" data-mode="referee" id="modeRefereeBtn" title="審判モード：編集モードと同じ表示（表面上の手・実質的な手・勝敗・得点）を、入力欄なしで見られます">🧑‍⚖️ 審判</button>
+      <button type="button" class="mode-btn" data-mode="player" id="modePlayerBtn" title="プレイヤーモード：表面上の手・勝敗・得点のみを表示します（実質的な手は非表示）">🎮 プレイヤー</button>
     </div>
     <div class="reset-menu-wrap edit-only">
       <button type="button" class="reset-btn" id="resetMenuBtn">🗑 リセット ▾</button>
@@ -40,8 +41,8 @@
     </div>
   </div>
 
-  <p class="mode-note">このメモ帳のデータは、このページを開いている全員で共有されます。数秒おきに自動更新されるので、誰かが記録した対戦は他の人の画面にも反映されます。入力しない人は「視聴モード」にすると、結果とランキングだけを見やすく表示できます（視聴モードでは「実質的な手」は表示されません）。</p>
-  <p class="view-mode-banner">👀 視聴モード中：入力欄は非表示です。対戦結果（表面上の手）とランキングを見るだけのモードです。自動的に最新の状態に更新されます。</p>
+  <p class="mode-note">このメモ帳のデータは、このページを開いている全員で共有されます。数秒おきに自動更新されるので、誰かが記録した対戦は他の人の画面にも反映されます。入力しない人は「審判モード」（表面上の手・実質的な手・勝敗・得点すべて見える）か「プレイヤーモード」（表面上の手・勝敗・得点のみ、実質的な手は非表示）を選べます。</p>
+  <p class="view-mode-banner" id="viewModeBanner"></p>
 
   <div class="card edit-only">
     <h2>参加者リストを管理</h2>
@@ -55,7 +56,7 @@
 
   <div class="card edit-only">
     <h2>独自手リストを管理</h2>
-    <p class="roster-hint">グー・チョキ・パー・空手以外の技も先に登録しておくと、対戦のたびに考えなくても「みんなの手から選ぶ」でタップして使えます。（表面上の手・実質的な手のどちらでも使えます）</p>
+    <p class="roster-hint">グー・チョキ・パー・空手（くうて）以外の技も先に登録しておくと、対戦のたびに考えなくても「みんなの手から選ぶ」でタップして使えます。（表面上の手・実質的な手のどちらでも使えます）</p>
     <div class="roster-add-row">
       <input type="text" id="customMoveInput" placeholder="例：無限、朝ごはん、季語入りグー…">
       <button type="button" id="customMoveAddBtn" class="roster-add-btn">追加</button>
