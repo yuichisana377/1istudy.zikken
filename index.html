@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
+<title>自由律じゃんけん メモ帳</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Yomogi&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="binder">
+  <div class="hole"></div><div class="hole"></div><div class="hole"></div>
+  <div class="hole"></div><div class="hole"></div><div class="hole"></div>
+  <div class="hole"></div><div class="hole"></div><div class="hole"></div>
+</div>
+
+<div class="wrap">
+
+  <header class="page-head">
+    <h1>自由律じゃんけん メモ帳 <span class="stamp-mini">判定</span></h1>
+    <p>グー・チョキ・パー・空手（くうて＝何も出さない手）はワンタップ、それ以外は「独自手」で自由入力。<br>
+    誰が何を出したか、判定はどうだったかをその場でメモ。</p>
+  </header>
+
+  <div class="mode-toolbar">
+    <div class="mode-toggle" id="modeToggle">
+      <button type="button" class="mode-btn active" data-mode="edit" id="modeEditBtn">✏️ 編集モード</button>
+      <button type="button" class="mode-btn" data-mode="view" id="modeViewBtn">👀 視聴モード</button>
+    </div>
+    <div class="reset-menu-wrap edit-only">
+      <button type="button" class="reset-btn" id="resetMenuBtn">🗑 リセット ▾</button>
+      <div class="reset-menu" id="resetMenu">
+        <button type="button" class="reset-menu-item" data-action="historyOnly">📝 メモ一覧だけリセット</button>
+        <button type="button" class="reset-menu-item" data-action="exceptRoster">👤 プレイヤー以外リセット</button>
+        <button type="button" class="reset-menu-item danger" data-action="all">🗑 すべてリセット</button>
+      </div>
+    </div>
+  </div>
+
+  <p class="mode-note">このメモ帳のデータは、このページを開いている全員で共有されます。数秒おきに自動更新されるので、誰かが記録した対戦は他の人の画面にも反映されます。入力しない人は「視聴モード」にすると、結果とランキングだけを見やすく表示できます。</p>
+  <p class="view-mode-banner">👀 視聴モード中：入力欄は非表示です。対戦結果とランキングを見るだけのモードです。自動的に最新の状態に更新されます。</p>
+
+  <div class="card edit-only">
+    <h2>参加者リストを管理</h2>
+    <p class="roster-hint">先に名前を登録しておくと、対戦のたびに入力しなくてもタップで選べます。</p>
+    <div class="roster-add-row">
+      <input type="text" id="rosterInput" placeholder="名前を入力してEnterまたは追加">
+      <button type="button" id="rosterAddBtn" class="roster-add-btn">追加</button>
+    </div>
+    <div class="roster-chips" id="rosterChips"></div>
+  </div>
+
+  <div class="card edit-only">
+    <h2>独自手リストを管理</h2>
+    <p class="roster-hint">グー・チョキ・パー・空手（くうて）以外の技も先に登録しておくと、対戦のたびに考えなくても「みんなの手から選ぶ」でタップして使えます。</p>
+    <div class="roster-add-row">
+      <input type="text" id="customMoveInput" placeholder="例：無限、朝ごはん、季語入りグー…">
+      <button type="button" id="customMoveAddBtn" class="roster-add-btn">追加</button>
+    </div>
+    <div class="roster-chips" id="customMoveChips"></div>
+  </div>
+
+  <div class="card edit-only">
+    <h2>対戦を記録する</h2>
+    <div id="participantList"></div>
+    <button type="button" class="add-participant-btn" id="addParticipantBtn">＋ 参加者を追加</button>
+
+    <div class="winner-section">
+      <span class="winner-label">判定（勝者を選ぶ）</span>
+      <div class="winner-choices" id="winnerChoices"></div>
+    </div>
+
+    <div>
+      <span class="winner-label">判定コメント（任意）</span>
+      <textarea class="memo-input" id="memoInput" placeholder="例：季語が入っていたので優勝、など"></textarea>
+    </div>
+
+    <div class="submit-row">
+      <button type="button" class="submit-btn" id="submitBtn">この対戦を記録する</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>使われた技ランキング</h2>
+    <div class="stats-list" id="statsList"></div>
+  </div>
+
+  <div class="card">
+    <h2>対戦メモ一覧</h2>
+    <div class="history-toolbar">
+      <input type="text" id="searchInput" placeholder="名前や技で検索…">
+      <span class="history-count" id="historyCount"></span>
+    </div>
+    <div id="historyList"></div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="system.js"></script>
+
+</body>
+</html>
