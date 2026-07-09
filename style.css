@@ -472,19 +472,6 @@ body.view-mode .edit-only{ display:none !important; }
   font-weight:700;
 }
 
-.add-participant-btn{
-  background:none;
-  border:1px dashed var(--ink-soft);
-  color:var(--ink-soft);
-  border-radius:3px;
-  padding:7px 12px;
-  font-size:13px;
-  cursor:pointer;
-  margin:2px 0 16px;
-  font-family:'Zen Kaku Gothic New', sans-serif;
-}
-.add-participant-btn:hover{ border-color:var(--ink); color:var(--ink); }
-
 .winner-section{ margin:14px 0; }
 .winner-label{
   font-size:12.5px;
@@ -665,6 +652,76 @@ textarea.memo-input{
   padding:5px 12px;
 }
 .stats-chip b{ color:var(--hanko); margin-left:3px; }
+
+/* ---- 得点（勝敗）ランキング ---- */
+.score-list{
+  display:flex;
+  flex-direction:column;
+  gap:7px;
+}
+.score-row{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:8px 12px;
+  background:#fbf9f2;
+  border:1px solid var(--rule);
+  border-radius:6px;
+}
+.score-row.top1{ border-color:var(--hanko); background:#f8ede9; }
+.score-rank{
+  font-family:'Yomogi', cursive;
+  font-size:17px;
+  width:26px;
+  flex-shrink:0;
+  text-align:center;
+  color:var(--ink-soft);
+}
+.score-row.top1 .score-rank,
+.score-row.top2 .score-rank,
+.score-row.top3 .score-rank{
+  font-size:19px;
+}
+.score-name{
+  font-weight:700;
+  font-size:14px;
+  flex:1;
+  min-width:0;
+  word-break:break-all;
+}
+.score-record{
+  font-size:12px;
+  color:var(--ink-soft);
+  white-space:nowrap;
+  flex-shrink:0;
+}
+.score-record b{ color:var(--hanko); font-weight:700; }
+.score-bar-wrap{
+  width:100%;
+  height:5px;
+  background:var(--rule);
+  border-radius:3px;
+  overflow:hidden;
+  margin-top:5px;
+}
+.score-bar{
+  height:100%;
+  background:var(--hanko);
+  border-radius:3px;
+}
+.score-row-inner{
+  flex:1;
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
+.score-row-top{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+}
 
 .toast{
   position:fixed;
@@ -869,16 +926,6 @@ textarea.memo-input{
     font-size:10.5px;
   }
 
-  .add-participant-btn{
-    width: 100%;
-    display: block;
-    box-sizing: border-box;
-    text-align: center;
-    padding:5px 8px;
-    font-size:11px;
-    margin:2px 0 8px;
-  }
-
   /* ---- 判定・メモ・送信ボタンを圧縮 ---- */
   .winner-section{ margin:8px 0; }
   .winner-label{ font-size:10px; margin-bottom:5px; }
@@ -919,6 +966,32 @@ textarea.memo-input{
     font-size:10px;
     border-radius:10px;
   }
+
+  /* ---- 得点ランキングも枠内スクロールでコンパクトに ---- */
+  .score-list{
+    max-height:130px;
+    overflow-y:auto;
+    gap:5px;
+    padding-right:2px;
+    scrollbar-width:thin;
+  }
+  .score-row{
+    padding:5px 8px;
+    gap:7px;
+    border-radius:5px;
+  }
+  .score-rank{
+    font-size:12.5px;
+    width:18px;
+  }
+  .score-row.top1 .score-rank,
+  .score-row.top2 .score-rank,
+  .score-row.top3 .score-rank{
+    font-size:14px;
+  }
+  .score-name{ font-size:11.5px; }
+  .score-record{ font-size:9.5px; }
+  .score-bar-wrap{ height:3px; margin-top:3px; }
 
   /* ---- 対戦メモ一覧は枠内スクロールにして全体の縦幅を抑える ---- */
   .history-toolbar{
@@ -982,11 +1055,13 @@ textarea.memo-input{
 
   /* ---- 内部スクロール枠の細いスクロールバー ---- */
   #historyList::-webkit-scrollbar,
-  .stats-list::-webkit-scrollbar{
+  .stats-list::-webkit-scrollbar,
+  .score-list::-webkit-scrollbar{
     width:4px;
   }
   #historyList::-webkit-scrollbar-thumb,
-  .stats-list::-webkit-scrollbar-thumb{
+  .stats-list::-webkit-scrollbar-thumb,
+  .score-list::-webkit-scrollbar-thumb{
     background:var(--rule);
     border-radius:4px;
   }
