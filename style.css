@@ -207,6 +207,9 @@ body.mode-player .edit-only{ display:none !important; }
 /* 実質的な手はプレイヤーモードだけ隠す（審判モードでは編集モードと同じく表示） */
 body.mode-player .real-move{ display:none !important; }
 
+/* 使われた技ランキングはプレイヤーモードだけ隠す */
+body.mode-player .stats-card{ display:none !important; }
+
 .roster-hint{
   margin:0 0 12px;
   font-size:12.5px;
