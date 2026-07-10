@@ -43,6 +43,8 @@
   const statsList = document.getElementById('statsList');
   const player1StatsList = document.getElementById('player1StatsList');
   const player2StatsList = document.getElementById('player2StatsList');
+  const player1Heading = document.getElementById('player1Heading');
+  const player2Heading = document.getElementById('player2Heading');
   const scoreList = document.getElementById('scoreList');
   const toastEl = document.getElementById('toast');
   const rosterInput = document.getElementById('rosterInput');
@@ -76,7 +78,7 @@
     if (mode === 'referee'){
       viewModeBanner.textContent = '🧑\u200d⚖️ 審判モード中：入力欄は非表示です。編集モードと同じく、表面上の手・実質的な手・勝敗・得点ランキングすべてを確認できます。自動的に最新の状態に更新されます。';
     } else if (mode === 'player'){
-      viewModeBanner.textContent = '🎮 プレイヤーモード中：入力欄は非表示です。表面上の手・勝敗・得点ランキングのみを表示します（実質的な手は表示されません）。自動的に最新の状態に更新されます。';
+      viewModeBanner.textContent = '🎮 プレイヤーモード中：入力欄は非表示です。表面上の手・勝敗・得点ランキングのみを表示します（実質的な手・使われた技ランキング・判定コメントは表示されません）。自動的に最新の状態に更新されます。';
     }
   }
   modeEditBtn.addEventListener('click', () => setMode('edit'));
@@ -759,6 +761,19 @@
     });
   }
 
+  // その枠（1番目 / 2番目に入力された人）でよく使われている名前を見出しに表示する
+  function mostCommonNameAt(idx, fallback){
+    const nameCounts = {};
+    rounds.forEach(r => {
+      const p = r.participants[idx];
+      const name = p && p.name ? p.name.trim() : '';
+      if (!name) return;
+      nameCounts[name] = (nameCounts[name] || 0) + 1;
+    });
+    const entries = Object.entries(nameCounts).sort((a, b) => b[1] - a[1]);
+    return entries.length ? entries[0][0] : fallback;
+  }
+
   function renderStats(){
     const totalCounts = {};
     const p1Counts = {};
@@ -782,6 +797,9 @@
     buildRankingHtml(sortEntries(totalCounts), statsList);
     buildRankingHtml(sortEntries(p1Counts), player1StatsList);
     buildRankingHtml(sortEntries(p2Counts), player2StatsList);
+
+    player1Heading.textContent = mostCommonNameAt(0, 'プレイヤー1');
+    player2Heading.textContent = mostCommonNameAt(1, 'プレイヤー2');
   }
 
   /* ---- 得点（勝敗）ランキング ---- */
