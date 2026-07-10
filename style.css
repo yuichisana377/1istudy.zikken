@@ -576,6 +576,7 @@ textarea.memo-input{
   border-radius:3px;
   cursor:pointer;
   letter-spacing:0.05em;
+  text-align:center;
 }
 .submit-btn:hover{ background:#000; }
 .submit-btn:disabled{ background:#a39d8c; cursor:not-allowed; }
@@ -591,6 +592,7 @@ textarea.memo-input{
   border-radius:3px;
   cursor:pointer;
   letter-spacing:0.03em;
+  text-align:center;
 }
 .next-btn:hover{ background:#233a60; }
 
@@ -605,6 +607,7 @@ textarea.memo-input{
   border-radius:3px;
   cursor:pointer;
   display:none;
+  text-align:center;
 }
 .back-btn:hover{ color:var(--hanko); border-color:var(--hanko); }
 
