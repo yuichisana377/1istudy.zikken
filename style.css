@@ -593,6 +593,8 @@ textarea.memo-input{
   cursor:pointer;
   letter-spacing:0.03em;
   text-align:center;
+  justify-content:center;
+  align-items:center;
 }
 .next-btn:hover{ background:#233a60; }
 
@@ -608,6 +610,8 @@ textarea.memo-input{
   cursor:pointer;
   display:none;
   text-align:center;
+  justify-content:center;
+  align-items:center;
 }
 .back-btn:hover{ color:var(--hanko); border-color:var(--hanko); }
 
