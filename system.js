@@ -41,7 +41,8 @@
   const historyCount = document.getElementById('historyCount');
   const searchInput = document.getElementById('searchInput');
   const statsList = document.getElementById('statsList');
-  const comboStatsList = document.getElementById('comboStatsList');
+  const player1StatsList = document.getElementById('player1StatsList');
+  const player2StatsList = document.getElementById('player2StatsList');
   const scoreList = document.getElementById('scoreList');
   const toastEl = document.getElementById('toast');
   const rosterInput = document.getElementById('rosterInput');
@@ -306,7 +307,8 @@
       moves.appendChild(customBtn);
       block.appendChild(moves);
 
-      if (curMode === 'custom'){
+      // 独自手の候補は、「独自手」ボタンを押さなくても最初から見える（タップすればそのまま独自手として選択される）
+      {
         const history = customMoveHistory.filter(Boolean);
         const historyWrap = document.createElement('div');
         historyWrap.className = 'custom-history';
@@ -320,13 +322,19 @@
           const chipsWrap = document.createElement('div');
           chipsWrap.className = 'custom-history-chips';
           const curText = isReal ? p.realCustomText : p.customText;
+          const curTextActive = curMode === 'custom';
           history.forEach(move => {
             const chip = document.createElement('div');
-            chip.className = 'custom-history-chip' + (curText === move ? ' selected' : '');
+            chip.className = 'custom-history-chip' + ((curTextActive && curText === move) ? ' selected' : '');
             chip.textContent = move;
             chip.addEventListener('click', () => {
-              if (isReal) draftParticipants[i].realCustomText = move;
-              else draftParticipants[i].customText = move;
+              if (isReal){
+                draftParticipants[i].realMode = 'custom';
+                draftParticipants[i].realCustomText = move;
+              } else {
+                draftParticipants[i].mode = 'custom';
+                draftParticipants[i].customText = move;
+              }
               renderParticipantForm();
             });
             chipsWrap.appendChild(chip);
@@ -734,50 +742,46 @@
     return (p.item || '').trim();
   }
 
-  // 使われた技ランキングは、プレイヤーごとの実質的な手（未入力なら表面上の手）を集計する。
-  // あわせて、その対戦での二人の組み合わせ（例：グー vs チョキ）も別枠で集計する。
+  // 使われた技ランキング：二人合計に加えて、プレイヤー1（先に入力した側）・
+  // プレイヤー2（後に入力した側）それぞれの単独ランキングも出す。
+  // どちらも、実質的な手が入力されていればそれを、なければ表面上の手を集計対象にする。
+  function buildRankingHtml(entries, listEl){
+    if (entries.length === 0){
+      listEl.innerHTML = `<div class="empty-state" style="padding:16px 0;">まだ集計するデータがありません</div>`;
+      return;
+    }
+    listEl.innerHTML = '';
+    entries.forEach(([item, count]) => {
+      const chip = document.createElement('div');
+      chip.className = 'stats-chip';
+      chip.innerHTML = `${moveItemHtml(item)}<b>×${count}</b>`;
+      listEl.appendChild(chip);
+    });
+  }
+
   function renderStats(){
-    const counts = {};
-    const comboCounts = {}; // key -> { count, moves:[...] }
+    const totalCounts = {};
+    const p1Counts = {};
+    const p2Counts = {};
 
     rounds.forEach(r => {
-      const moves = r.participants.map(p => effectiveMoveText(p)).filter(Boolean);
-      moves.forEach(m => {
-        counts[m] = (counts[m] || 0) + 1;
+      r.participants.forEach((p, idx) => {
+        const key = effectiveMoveText(p);
+        if (!key) return;
+        totalCounts[key] = (totalCounts[key] || 0) + 1;
+        if (idx === 0){
+          p1Counts[key] = (p1Counts[key] || 0) + 1;
+        } else if (idx === 1){
+          p2Counts[key] = (p2Counts[key] || 0) + 1;
+        }
       });
-      if (moves.length >= 2){
-        const key = moves.join('\u241F');
-        if (!comboCounts[key]) comboCounts[key] = { count: 0, moves };
-        comboCounts[key].count += 1;
-      }
     });
 
-    const sorted = Object.entries(counts).sort((a,b) => b[1]-a[1]).slice(0, 12);
-    if (sorted.length === 0){
-      statsList.innerHTML = `<div class="empty-state" style="padding:16px 0;">まだ集計するデータがありません</div>`;
-    } else {
-      statsList.innerHTML = '';
-      sorted.forEach(([item, count]) => {
-        const chip = document.createElement('div');
-        chip.className = 'stats-chip';
-        chip.innerHTML = `${moveItemHtml(item)}<b>×${count}</b>`;
-        statsList.appendChild(chip);
-      });
-    }
+    const sortEntries = counts => Object.entries(counts).sort((a,b) => b[1]-a[1]).slice(0, 12);
 
-    const comboSorted = Object.values(comboCounts).sort((a,b) => b.count - a.count).slice(0, 12);
-    if (comboSorted.length === 0){
-      comboStatsList.innerHTML = `<div class="empty-state" style="padding:16px 0;">まだ集計するデータがありません</div>`;
-    } else {
-      comboStatsList.innerHTML = '';
-      comboSorted.forEach(c => {
-        const chip = document.createElement('div');
-        chip.className = 'stats-chip combo-chip';
-        const movesHtml = c.moves.map(m => moveItemHtml(m)).join(' <span class="combo-sep">vs</span> ');
-        chip.innerHTML = `${movesHtml}<b>×${c.count}</b>`;
-        comboStatsList.appendChild(chip);
-      });
-    }
+    buildRankingHtml(sortEntries(totalCounts), statsList);
+    buildRankingHtml(sortEntries(p1Counts), player1StatsList);
+    buildRankingHtml(sortEntries(p2Counts), player2StatsList);
   }
 
   /* ---- 得点（勝敗）ランキング ---- */
@@ -917,4 +921,3 @@
 
   init();
 })();
-    
