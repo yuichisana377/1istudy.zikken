@@ -41,6 +41,7 @@
   const historyCount = document.getElementById('historyCount');
   const searchInput = document.getElementById('searchInput');
   const statsList = document.getElementById('statsList');
+  const comboStatsList = document.getElementById('comboStatsList');
   const scoreList = document.getElementById('scoreList');
   const toastEl = document.getElementById('toast');
   const rosterInput = document.getElementById('rosterInput');
@@ -726,32 +727,57 @@
     });
   }
 
-  // 使われた技ランキングは「表面上の手」「実質的な手」の両方を集計対象にする
+  // 実質的な手が入力されていればそれを、なければ表面上の手を「その人が実際に出した手」として扱う
+  function effectiveMoveText(p){
+    const real = (p.realItem || '').trim();
+    if (real) return real;
+    return (p.item || '').trim();
+  }
+
+  // 使われた技ランキングは、プレイヤーごとの実質的な手（未入力なら表面上の手）を集計する。
+  // あわせて、その対戦での二人の組み合わせ（例：グー vs チョキ）も別枠で集計する。
   function renderStats(){
     const counts = {};
-    rounds.forEach(r => {
-      r.participants.forEach(p => {
-        [p.item, p.realItem].forEach(val => {
-          const key = (val || '').trim();
-          if (!key) return;
-          counts[key] = (counts[key] || 0) + 1;
-        });
-      });
-    });
-    const sorted = Object.entries(counts).sort((a,b) => b[1]-a[1]).slice(0, 12);
+    const comboCounts = {}; // key -> { count, moves:[...] }
 
+    rounds.forEach(r => {
+      const moves = r.participants.map(p => effectiveMoveText(p)).filter(Boolean);
+      moves.forEach(m => {
+        counts[m] = (counts[m] || 0) + 1;
+      });
+      if (moves.length >= 2){
+        const key = moves.join('\u241F');
+        if (!comboCounts[key]) comboCounts[key] = { count: 0, moves };
+        comboCounts[key].count += 1;
+      }
+    });
+
+    const sorted = Object.entries(counts).sort((a,b) => b[1]-a[1]).slice(0, 12);
     if (sorted.length === 0){
       statsList.innerHTML = `<div class="empty-state" style="padding:16px 0;">まだ集計するデータがありません</div>`;
-      return;
+    } else {
+      statsList.innerHTML = '';
+      sorted.forEach(([item, count]) => {
+        const chip = document.createElement('div');
+        chip.className = 'stats-chip';
+        chip.innerHTML = `${moveItemHtml(item)}<b>×${count}</b>`;
+        statsList.appendChild(chip);
+      });
     }
 
-    statsList.innerHTML = '';
-    sorted.forEach(([item, count]) => {
-      const chip = document.createElement('div');
-      chip.className = 'stats-chip';
-      chip.innerHTML = `${moveItemHtml(item)}<b>×${count}</b>`;
-      statsList.appendChild(chip);
-    });
+    const comboSorted = Object.values(comboCounts).sort((a,b) => b.count - a.count).slice(0, 12);
+    if (comboSorted.length === 0){
+      comboStatsList.innerHTML = `<div class="empty-state" style="padding:16px 0;">まだ集計するデータがありません</div>`;
+    } else {
+      comboStatsList.innerHTML = '';
+      comboSorted.forEach(c => {
+        const chip = document.createElement('div');
+        chip.className = 'stats-chip combo-chip';
+        const movesHtml = c.moves.map(m => moveItemHtml(m)).join(' <span class="combo-sep">vs</span> ');
+        chip.innerHTML = `${movesHtml}<b>×${c.count}</b>`;
+        comboStatsList.appendChild(chip);
+      });
+    }
   }
 
   /* ---- 得点（勝敗）ランキング ---- */
@@ -891,3 +917,4 @@
 
   init();
 })();
+    
