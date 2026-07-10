@@ -224,21 +224,13 @@
     const stepHeading = document.createElement('div');
     stepHeading.className = 'step-heading';
     stepHeading.textContent = isReal
-      ? '② 実質的な手を入力する'
+      ? '② 実質的な手を入力する（各参加者の表面上の手も下に表示中）'
       : '① 表面上の手を入力する';
     participantListEl.appendChild(stepHeading);
 
     draftParticipants.forEach((p, i) => {
       const block = document.createElement('div');
       block.className = 'participant-block';
-
-      const head = document.createElement('div');
-      head.className = 'participant-block-head';
-      const label = document.createElement('span');
-      label.className = 'participant-index-label';
-      label.textContent = i === 0 ? '👤 先手' : '👤 後手';
-      head.appendChild(label);
-      block.appendChild(head);
 
       const nameSection = document.createElement('div');
       nameSection.className = 'name-picker-wrap';
@@ -352,7 +344,7 @@
     draftParticipants.forEach((p, i) => {
       const chip = document.createElement('div');
       chip.className = 'winner-choice' + (draftWinner === i ? ' selected' : '');
-      chip.textContent = (p.name || (i === 0 ? '先手' : '後手')) + ' の勝ち';
+      chip.textContent = (p.name || ('参加者' + (i + 1))) + ' の勝ち';
       chip.addEventListener('click', () => {
         draftWinner = (draftWinner === i) ? null : i;
         renderWinnerChoices();
