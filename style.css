@@ -210,6 +210,9 @@ body.mode-player .real-move{ display:none !important; }
 /* 使われた技ランキングはプレイヤーモードだけ隠す */
 body.mode-player .stats-card{ display:none !important; }
 
+/* 判定コメント（メモ）はプレイヤーモードだけ隠す */
+body.mode-player .round-memo{ display:none !important; }
+
 .roster-hint{
   margin:0 0 12px;
   font-size:12.5px;
@@ -556,7 +559,7 @@ textarea.memo-input{
 
 .submit-row{
   display:flex;
-  justify-content:flex-end;
+  justify-content:center;
   align-items:center;
   gap:10px;
   margin-top:14px;
@@ -602,7 +605,6 @@ textarea.memo-input{
   border-radius:3px;
   cursor:pointer;
   display:none;
-  margin-right:auto;
 }
 .back-btn:hover{ color:var(--hanko); border-color:var(--hanko); }
 
