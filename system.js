@@ -29,6 +29,7 @@
   let draftWinner = null;
   let currentMode = 'edit'; // 'edit' | 'view'
   let formStep = 'surface'; // 'surface' | 'real'
+  let editingRoundId = null; // 編集中の対戦メモのID（nullなら新規記録）
   let pollTimer = null;
 
   const participantListEl = document.getElementById('participantList');
@@ -37,6 +38,7 @@
   const submitBtn = document.getElementById('submitBtn');
   const nextStepBtn = document.getElementById('nextStepBtn');
   const backStepBtn = document.getElementById('backStepBtn');
+  const cancelEditBtn = document.getElementById('cancelEditBtn');
   const historyList = document.getElementById('historyList');
   const historyCount = document.getElementById('historyCount');
   const searchInput = document.getElementById('searchInput');
@@ -195,6 +197,7 @@
     syncNamesFromRoster();
     draftWinner = null;
     formStep = 'surface';
+    editingRoundId = null;
     memoInput.value = '';
     renderParticipantForm();
     updateStepButtons();
@@ -218,7 +221,75 @@
     const isReal = formStep === 'real';
     backStepBtn.style.display = isReal ? 'inline-flex' : 'none';
     nextStepBtn.style.display = isReal ? 'none' : 'inline-flex';
-    submitBtn.textContent = isReal ? 'この対戦を記録する（表＋実）' : 'この対戦を記録する（表面のみ）';
+    if (editingRoundId){
+      submitBtn.textContent = isReal ? 'この編集内容で更新する（表＋実）' : 'この編集内容で更新する（表面のみ）';
+      cancelEditBtn.style.display = 'inline-flex';
+    } else {
+      submitBtn.textContent = isReal ? 'この対戦を記録する（表＋実）' : 'この対戦を記録する（表面のみ）';
+      cancelEditBtn.style.display = 'none';
+    }
+  }
+
+  // 対戦メモ一覧の「編集」ボタン：既存の記録をフォームに読み込んで編集できるようにする
+  function startEditRound(id){
+    const r = rounds.find(x => x.id === id);
+    if (!r) return;
+
+    editingRoundId = id;
+
+    const toDraftParticipant = p => {
+      const dp = newParticipant(p.name);
+      const std = STANDARD_MOVES.find(m => m.label === p.item);
+      if (std){
+        dp.mode = std.key;
+      } else if (p.item){
+        dp.mode = 'custom';
+        dp.customText = p.item;
+      }
+      if (p.realItem){
+        const stdReal = STANDARD_MOVES.find(m => m.label === p.realItem);
+        if (stdReal){
+          dp.realMode = stdReal.key;
+        } else {
+          dp.realMode = 'custom';
+          dp.realCustomText = p.realItem;
+        }
+      }
+      return dp;
+    };
+
+    draftParticipants = r.participants.map(toDraftParticipant);
+    while (draftParticipants.length < 2){
+      draftParticipants.push(newParticipant(''));
+    }
+
+    if (r.winner === 'draw'){
+      draftWinner = 'draw';
+    } else if (typeof r.winner === 'number'){
+      draftWinner = r.winner;
+    } else {
+      draftWinner = null;
+    }
+
+    memoInput.value = r.memo || '';
+    formStep = draftParticipants.some(p => p.realMode) ? 'real' : 'surface';
+
+    renderParticipantForm();
+    renderWinnerChoices();
+    updateStepButtons();
+    setMode('edit');
+    showToast('編集モードに読み込みました');
+
+    const recordCard = document.getElementById('recordCard');
+    if (recordCard){
+      recordCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+
+  function cancelEdit(){
+    resetDraft();
+    renderWinnerChoices();
+    showToast('編集をキャンセルしました');
   }
 
   function renderParticipantForm(){
@@ -391,6 +462,8 @@
     updateStepButtons();
   });
 
+  cancelEditBtn.addEventListener('click', cancelEdit);
+
   async function submitRound(){
     const withItems = draftParticipants.map(p => ({
       name: p.name.trim() || '名無し',
@@ -404,9 +477,11 @@
       return;
     }
 
+    const isEditing = !!editingRoundId;
+
     const round = {
-      id: 'r_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
-      timestamp: Date.now(),
+      id: isEditing ? editingRoundId : ('r_' + Date.now() + '_' + Math.random().toString(36).slice(2,7)),
+      timestamp: isEditing ? null : Date.now(), // 編集時は下で元のtimestampを引き継ぐ
       participants: cleaned,
       winner: null,
       memo: memoInput.value.trim()
@@ -422,9 +497,26 @@
       }
     }
 
-    // 送信直前に最新のデータを取り直してから追加する（他の人の記録を消さないため）
+    // 送信直前に最新のデータを取り直してから反映する（他の人の記録を消さないため）
     await loadRounds();
-    rounds.unshift(round);
+
+    if (isEditing){
+      const idx = rounds.findIndex(r => r.id === editingRoundId);
+      if (idx === -1){
+        showToast('この記録はすでに削除されています');
+        resetDraft();
+        renderWinnerChoices();
+        renderHistory();
+        renderStats();
+        renderScores();
+        return;
+      }
+      round.timestamp = rounds[idx].timestamp; // 記録日時は元のまま保持
+      rounds[idx] = round;
+    } else {
+      rounds.unshift(round);
+    }
+
     await persistRounds();
     updateCustomMoveHistory(draftParticipants);
     await persistCustomMoves();
@@ -433,7 +525,7 @@
     renderHistory();
     renderStats();
     renderScores();
-    showToast('記録しました');
+    showToast(isEditing ? '更新しました' : '記録しました');
   }
 
   async function loadRoster(){ /* loadRounds() が兼ねる */ }
@@ -633,6 +725,10 @@
   async function deleteRound(id){
     rounds = rounds.filter(r => r.id !== id);
     await persistRounds();
+    if (editingRoundId === id){
+      resetDraft();
+      renderWinnerChoices();
+    }
     renderHistory();
     renderStats();
     renderScores();
@@ -689,11 +785,21 @@
       time.className = 'round-time';
       time.textContent = formatTime(r.timestamp);
       top.appendChild(time);
+
+      const actions = document.createElement('div');
+      actions.className = 'round-actions edit-only';
       const delBtn = document.createElement('button');
-      delBtn.className = 'delete-round-btn edit-only';
+      delBtn.className = 'delete-round-btn';
       delBtn.textContent = '削除';
       delBtn.addEventListener('click', () => deleteRound(r.id));
-      top.appendChild(delBtn);
+      actions.appendChild(delBtn);
+      const editBtn = document.createElement('button');
+      editBtn.className = 'edit-round-btn';
+      editBtn.textContent = '編集';
+      editBtn.addEventListener('click', () => startEditRound(r.id));
+      actions.appendChild(editBtn);
+      top.appendChild(actions);
+
       card.appendChild(top);
 
       const vsLine = document.createElement('div');
